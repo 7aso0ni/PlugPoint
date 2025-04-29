@@ -10,14 +10,14 @@ class BaseModel
 {
     // A reference to the PDO instance
     protected $db;
-
-    // Static PDO object to ensure only a single connection is created
     private static $pdo = null;
 
-    // Properties used in query building
-    private $query;    // Holds the SQL query being constructed
-    private $params = []; // Parameters for prepared SQL statements
-    private $table;    // The current table name being operated on
+    private $query;
+    private $params = [];
+    private $table;
+
+    private $where = '';
+    private $whereParams = [];
 
     /**
      * Establishes a database connection using PDO.
@@ -95,15 +95,19 @@ class BaseModel
      */
     public function where(string $column, string $operator, $value): BaseModel
     {
-        // Append "WHERE" or "AND" based on query state
-        // it checks if where condition already exists or not if it does add the AND statement then append it
-        $this->query .= (strpos($this->query, 'WHERE') === false ? " WHERE" : " AND") . " $column $operator :$column";
+        $safeParam = str_replace('.', '_', $column);
 
-        // Add the condition value to the parameters array
-        $this->params[$column] = $value;
+        if ($this->where === '') {
+            $this->where = " WHERE $column $operator :$safeParam";
+        } else {
+            $this->where .= " AND $column $operator :$safeParam";
+        }
 
-        return $this; // Return current instance for chaining
+        $this->whereParams[$safeParam] = $value;
+
+        return $this;
     }
+
 
     /**
      * Builds an INSERT query for the specified data.
@@ -124,6 +128,12 @@ class BaseModel
         $this->params = $data;
 
         return $this->execute(); // Execute the query
+    }
+
+    public function join(string $table, string $first, string $operator, string $second): BaseModel
+    {
+        $this->query .= " JOIN $table ON $first $operator $second";
+        return $this;
     }
 
     /**
@@ -159,24 +169,40 @@ class BaseModel
         return $this->execute()->rowCount() > 0;
     }
 
-    public function update(array $data)
+
+    /**
+     * Updates records in the database.
+     *
+     * @param array $data The data to update.
+     * @return PDOStatement The executed statement.
+     */
+    public function update(array $data): PDOStatement
     {
-        // Build SET clause: "column1 = :column1, column2 = :column2, ..."
+        if (empty($data)) {
+            throw new \InvalidArgumentException("Update data cannot be empty");
+        }
+
+        // Build SET clause
         $setClauses = [];
+        $updateParams = [];
+
         foreach ($data as $column => $value) {
-            $setClauses[] = "$column = :$column";
+            $paramName = "update_" . $column;
+            $setClauses[] = "$column = :$paramName";
+            $updateParams[$paramName] = $value;
         }
 
         $setClause = implode(', ', $setClauses);
 
-        // Compose the UPDATE query
-        $this->query = "UPDATE {$this->table} SET $setClause";
+        // 🔥 Completely rebuild correct UPDATE query
+        $this->query = "UPDATE {$this->table} SET $setClause" . $this->where;
 
-        // Merge new data with existing `where` params
-        $this->params = array_merge($this->params, $data);
+        // 🔥 Merge parameters
+        $this->params = $updateParams + $this->whereParams;
 
-        return $this->execute(); // Execute and return PDOStatement
+        return $this->execute();
     }
+
 
 
     /**

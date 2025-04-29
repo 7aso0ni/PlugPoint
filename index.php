@@ -32,8 +32,14 @@ switch ($route) {
     case "dashboard":
         $dashboard->index();
         break;
+    case "cancelRental":
+        $dashboard->cancelRental();
+        break;
     case "account":
         $account->showAccountPage();
+        break;
+    case "update_profile":
+        $account->updateUser();
         break;
     case 'logout':
         $auth->logout();

@@ -109,6 +109,8 @@ class AuthController
 
                     setcookie("loggedIn", true, time() + (86400 * 30), "/");
 
+                    $_SESSION['user'] = $user;
+
                     header("Location: /MVCProject/index.php");
                     exit(); // Added exit after redirect
                 }

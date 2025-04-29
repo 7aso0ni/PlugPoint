@@ -46,6 +46,7 @@
                             type="email"
                             id="email"
                             name="email"
+                            readonly
                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500"
                             value="<?= $_COOKIE['email'] ?? '' ?>"
                             required

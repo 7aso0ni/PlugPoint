@@ -5,13 +5,14 @@ use PDO;
 use PDOException;
 use PDOStatement;
 
+
 class BaseModel
 {
-    /* ─────────────────────────── DB CONNECTION ─────────────────────────── */
-    protected $db;
-    private static $pdo = null;
+    /* ───── DB connection (singleton) ───── */
+    protected PDO $db;
+    private static ?PDO $pdo = null;
 
-    private static function connect()
+    private static function connect(): ?PDO
     {
         if (self::$pdo === null) {
             try {
@@ -34,16 +35,19 @@ class BaseModel
         $this->db = self::connect() ?? die('Database connection error.');
     }
 
-    /* ────────────────────────── QUERY STATE ────────────────────────────── */
-    private string $queryBase = '';          // SELECT … FROM … JOIN …
-    private string $whereClause = '';          // WHERE …
+    /* ───── Query-builder state ───── */
+    private string $queryBase = '';    // SELECT / INSERT / UPDATE / DELETE
+    private string $whereClause = '';
     private array $whereParams = [];
+    private string $groupByClause = '';
+    private string $havingClause = '';
+    private string $orderByClause = '';
     private ?int $limit = null;
     private int $offset = 0;
-    private array $params = [];          // INSERT / UPDATE params
+    private array $params = [];    // for insert/update
     private string $table = '';
 
-    /* ────────────────────────── BUILDER METHODS ────────────────────────── */
+    /* ───── Core builder methods ───── */
     public function table(string $table): self
     {
         $this->table = $table;
@@ -65,7 +69,6 @@ class BaseModel
 
     public function where(string $column, string $operator, $value): self
     {
-        // Normalise placeholder name (e.g. cp.availability → cp_availability)
         $param = preg_replace('/[^a-zA-Z0-9_]/', '_', $column);
         $condition = "$column $operator :$param";
 
@@ -77,6 +80,49 @@ class BaseModel
         return $this;
     }
 
+    public function whereOr(callable $callback): self
+    {
+        $orBuilder = new OrConditionBuilder();
+        $callback($orBuilder);                 // user builds OR group
+
+        $conds = $orBuilder->getConditions();
+        if ($conds) {
+            $orClause = '(' . implode(' OR ', $conds) . ')';
+            $this->whereClause
+                ? $this->whereClause .= " AND $orClause"
+                : $this->whereClause = " WHERE $orClause";
+
+            $this->whereParams = array_merge(
+                $this->whereParams,
+                $orBuilder->getParameters()
+            );
+        }
+        return $this;
+    }
+
+    public function groupBy(string $column): self
+    {
+        $this->groupByClause
+            ? $this->groupByClause .= ", $column"
+            : $this->groupByClause = " GROUP BY $column";
+        return $this;
+    }
+
+    public function having(string $condition): self
+    {
+        $this->havingClause = " HAVING $condition";
+        return $this;
+    }
+
+    public function orderBy(string $column, string $direction = 'ASC'): self
+    {
+        $direction = strtoupper($direction) === 'DESC' ? 'DESC' : 'ASC';
+        $this->orderByClause
+            ? $this->orderByClause .= ", $column $direction"
+            : $this->orderByClause = " ORDER BY $column $direction";
+        return $this;
+    }
+
     public function limit(int $limit, int $offset = 0): self
     {
         $this->limit = $limit;
@@ -84,7 +130,7 @@ class BaseModel
         return $this;
     }
 
-    /* ────────────────────────── CRUD SHORT-CUTS ────────────────────────── */
+    /* ───── CRUD helpers ───── */
     public function get(int $mode = PDO::FETCH_ASSOC): array
     {
         return $this->execute()->fetchAll($mode);
@@ -100,11 +146,11 @@ class BaseModel
         return $this->execute()->rowCount() > 0;
     }
 
-    public function insert(array $data)
+    public function insert(array $data): PDOStatement
     {
         $cols = implode(', ', array_keys($data));
-        $holes = ':' . implode(', :', array_keys($data));
-        $this->queryBase = "INSERT INTO {$this->table} ($cols) VALUES ($holes)";
+        $placeholders = ':' . implode(', :', array_keys($data));
+        $this->queryBase = "INSERT INTO {$this->table} ($cols) VALUES ($placeholders)";
         $this->params = $data;
         return $this->execute();
     }
@@ -114,25 +160,53 @@ class BaseModel
         if (!$data) {
             throw new \InvalidArgumentException('Update data cannot be empty');
         }
-
-        $sets = [];
         foreach ($data as $col => $val) {
             $name = "upd_$col";
             $sets[] = "$col = :$name";
             $this->params[$name] = $val;
         }
-        $this->queryBase = "UPDATE {$this->table} SET " . implode(', ', $sets);
+        $this->queryBase = "UPDATE {$this->table} SET " . implode(', ', $sets ?? []);
         return $this->execute();
     }
 
-    /* ────────────────────────── EXECUTION ──────────────────────────────── */
+
+    public function delete(): PDOStatement
+    {
+        if ($this->whereClause === '') {
+            throw new \RuntimeException('Refusing to DELETE without a WHERE clause');
+        }
+        $this->queryBase = "DELETE FROM {$this->table}";
+        return $this->execute();
+    }
+
+    public function query(string $sql, array $params = []): PDOStatement
+    {
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        return $stmt;
+    }
+
+
+    public function sum(string $column, string $alias = 'sum'): float
+    {
+        $result = $this->select("SUM($column) AS $alias")->first();
+        return (float) ($result[$alias] ?? 0);
+    }
+
+    public function count(string $column = '*', string $alias = 'count'): int
+    {
+        $result = $this->select("COUNT($column) AS $alias")->first();
+        return (int) ($result[$alias] ?? 0);
+    }
+
+    /* ───── Build & execute ───── */
     private function assemble(): string
     {
-        $sql = $this->queryBase;
-
-        if ($this->whereClause) {
-            $sql .= $this->whereClause;
-        }
+        $sql = $this->queryBase .
+            $this->whereClause .
+            $this->groupByClause .
+            $this->havingClause .
+            $this->orderByClause;
 
         if ($this->limit !== null) {
             $sql .= " LIMIT {$this->limit}";
@@ -140,25 +214,14 @@ class BaseModel
                 $sql .= " OFFSET {$this->offset}";
             }
         }
-
         return $sql;
     }
 
     private function execute(): PDOStatement
     {
-        $sql = $this->assemble();
-        $allParams = array_merge($this->params, $this->whereParams);
-
-        // Uncomment for troubleshooting
-        // error_log("SQL  : $sql");
-        // error_log("PARAM: " . json_encode($allParams));
-
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute($allParams);
-
-        /* reset internal state so this instance can be reused safely */
+        $stmt = $this->db->prepare($this->assemble());
+        $stmt->execute(array_merge($this->params, $this->whereParams));
         $this->reset();
-
         return $stmt;
     }
 
@@ -167,9 +230,37 @@ class BaseModel
         $this->queryBase = '';
         $this->whereClause = '';
         $this->whereParams = [];
+        $this->groupByClause = '';
+        $this->havingClause = '';
+        $this->orderByClause = '';
         $this->limit = null;
         $this->offset = 0;
         $this->params = [];
         $this->table = '';
+    }
+}
+
+/* ─────────────────── Helper: OR condition builder ─────────────────── */
+class OrConditionBuilder
+{
+    private array $conditions = [];
+    private array $parameters = [];
+    private int $counter = 0;
+
+    public function where(string $column, string $operator, $value): self
+    {
+        $paramName = 'or_' . preg_replace('/[^a-zA-Z0-9_]/', '_', $column) . '_' . $this->counter++;
+        $this->conditions[] = "$column $operator :$paramName";
+        $this->parameters[$paramName] = $value;
+        return $this;
+    }
+
+    public function getConditions(): array
+    {
+        return $this->conditions;
+    }
+    public function getParameters(): array
+    {
+        return $this->parameters;
     }
 }

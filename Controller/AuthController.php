@@ -117,7 +117,14 @@ class AuthController
                     unset($user['password']);
                     $_SESSION['user'] = $user;
 
-                    header("Location: /PlugPoint/index.php?route=home");
+
+                    if ($user['role_id'] == 1) {
+                        // Redirect admin users to the admin dashboard
+                        header("Location: /PlugPoint/index.php?route=admin/dashboard");
+                    } else {
+                        // Redirect regular users to the home page
+                        header("Location: /PlugPoint/index.php?route=home");
+                    }
                     exit(); // Added exit after redirect
                 }
             }

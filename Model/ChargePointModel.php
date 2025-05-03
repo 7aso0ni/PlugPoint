@@ -12,6 +12,8 @@ class ChargePointModel extends BaseModel
 
     /**
      * Get all charge points
+     * 
+     * @return array All charge points
      */
     public function getAllChargePoints(): array
     {
@@ -22,6 +24,9 @@ class ChargePointModel extends BaseModel
 
     /**
      * Get charge point by ID
+     * 
+     * @param int $id Charge point ID
+     * @return array|null Charge point or null if not found
      */
     public function getChargePointById($id)
     {
@@ -33,19 +38,24 @@ class ChargePointModel extends BaseModel
 
     /**
      * Get charge points with owner information and pagination
+     * 
+     * @param int $limit Maximum number of results
+     * @param int $offset Pagination offset
+     * @return array Charge points with owner details
      */
-    public function getChargePointsWithOwners($limit = 8, $offset = 0): array
+    public function getAllChargePointsWithOwners($limit = 8, $offset = 0): array
     {
         return $this->table(self::TABLE_NAME . ' AS cp')
             ->select('cp.*, u.name as owner_name')
             ->join('Users AS u', 'cp.owner_id', '=', 'u.id')
-            ->where('cp.availability', '=', 1)
             ->limit($limit, $offset)
             ->get();
     }
 
     /**
      * Get count of available charge points
+     * 
+     * @return int Number of available charge points
      */
     public function getAvailableChargePointsCount(): int
     {
@@ -58,7 +68,28 @@ class ChargePointModel extends BaseModel
     }
 
     /**
+     * Get total number of charge points
+     * 
+     * @return int Total number of charge points
+     */
+    public function getTotalChargePoints(): int
+    {
+        $result = $this->table(self::TABLE_NAME)
+            ->select('COUNT(*) as count')
+            ->first();
+
+        return $result['count'] ?? 0;
+    }
+
+    /**
      * Get filtered charge points for listings page
+     * 
+     * @param string $search Search term
+     * @param float $maxPrice Maximum price filter
+     * @param int|null $available Availability filter
+     * @param int $limit Maximum results per page
+     * @param int $offset Pagination offset
+     * @return array Filtered charge points
      */
     public function getFilteredChargePoints($search = '', $maxPrice = 0.50, $available = null, $limit = 8, $offset = 0): array
     {
@@ -85,6 +116,11 @@ class ChargePointModel extends BaseModel
 
     /**
      * Get count of filtered charge points
+     * 
+     * @param string $search Search term
+     * @param float $maxPrice Maximum price filter
+     * @param int|null $available Availability filter
+     * @return int Count of filtered charge points
      */
     public function getFilteredChargePointsCount($search = '', $maxPrice = 0.50, $available = null): int
     {
@@ -111,6 +147,9 @@ class ChargePointModel extends BaseModel
 
     /**
      * Get charge point with owner details
+     * 
+     * @param int $id Charge point ID
+     * @return array|null Charge point with owner details or null if not found
      */
     public function getChargePointWithOwner($id)
     {
@@ -123,6 +162,9 @@ class ChargePointModel extends BaseModel
 
     /**
      * Get charge points owned by a specific user
+     * 
+     * @param int $ownerId Owner user ID
+     * @return array Charge points owned by the user
      */
     public function getChargePointsByOwner($ownerId): array
     {
@@ -134,6 +176,9 @@ class ChargePointModel extends BaseModel
 
     /**
      * Create a new charge point
+     * 
+     * @param array $data Charge point data
+     * @return mixed Result of insert operation
      */
     public function createChargePoint($data)
     {
@@ -143,6 +188,10 @@ class ChargePointModel extends BaseModel
 
     /**
      * Update a charge point
+     * 
+     * @param int $id Charge point ID
+     * @param array $data Updated charge point data
+     * @return mixed Result of update operation
      */
     public function updateChargePoint($id, $data)
     {
@@ -153,6 +202,10 @@ class ChargePointModel extends BaseModel
 
     /**
      * Update availability status
+     * 
+     * @param int $id Charge point ID
+     * @param int $availability New availability status
+     * @return mixed Result of update operation
      */
     public function updateAvailability($id, $availability)
     {
@@ -163,6 +216,9 @@ class ChargePointModel extends BaseModel
 
     /**
      * Check if a charge point exists with the given ID
+     * 
+     * @param int $id Charge point ID
+     * @return bool True if charge point exists
      */
     public function chargerExists($id): bool
     {
@@ -173,7 +229,11 @@ class ChargePointModel extends BaseModel
     }
 
     /**
-     * Search charge points by address or city
+     * Search charge points by address or location
+     * 
+     * @param string $searchTerm Search term
+     * @param int $limit Maximum results
+     * @return array Search results
      */
     public function searchByLocation($searchTerm, $limit = 10): array
     {
@@ -185,8 +245,103 @@ class ChargePointModel extends BaseModel
     }
 
     /**
-     * Enhanced version of getNearbyChargePoints that uses the ORM patterns
-     * and calculates actual distance using Haversine formula
+     * Search charge points by address or other fields
+     * 
+     * @param string $search Search term
+     * @param int $limit Maximum results per page
+     * @param int $offset Pagination offset
+     * @return array Search results
+     */
+    public function searchChargePoints($search, $limit = 10, $offset = 0): array
+    {
+        return $this->table(self::TABLE_NAME . ' AS cp')
+            ->select('cp.*, u.name as owner_name')
+            ->join('Users AS u', 'cp.owner_id', '=', 'u.id')
+            ->whereOr(function ($q) use ($search) {
+                $q->where('cp.address', 'LIKE', "%$search%")
+                    ->where('u.name', 'LIKE', "%$search%");
+
+                if (is_numeric($search)) {
+                    $q->where('cp.id', '=', (int) $search);
+                }
+            })
+            ->orderBy('cp.id', 'ASC')
+            ->limit($limit, $offset)
+            ->get();
+    }
+
+    /**
+     * Get count of search results
+     * 
+     * @param string $search Search term
+     * @return int Total count of search results
+     */
+    public function getTotalSearchResults($search): int
+    {
+        $result = $this->table(self::TABLE_NAME . ' AS cp')
+            ->select('COUNT(cp.id) as count')
+            ->join('Users AS u', 'cp.owner_id', '=', 'u.id')
+            ->whereOr(function ($q) use ($search) {
+                $q->where('cp.address', 'LIKE', "%$search%")
+                    ->where('u.name', 'LIKE', "%$search%");
+
+                if (is_numeric($search)) {
+                    $q->where('cp.id', '=', (int) $search);
+                }
+            })
+            ->first();
+
+        return $result['count'] ?? 0;
+    }
+
+    /**
+     * Delete a charge point
+     * 
+     * @param int $id Charge point ID
+     * @return mixed Result of delete operation
+     */
+    public function deleteChargePoint($id)
+    {
+        return $this->table(self::TABLE_NAME)
+            ->where('id', '=', $id)
+            ->delete();
+    }
+
+    /**
+     * Calculate distance between two points using Haversine formula
+     * 
+     * @param float $lat1 First point latitude
+     * @param float $lon1 First point longitude
+     * @param float $lat2 Second point latitude
+     * @param float $lon2 Second point longitude
+     * @return float Distance in kilometers
+     */
+    private function calculateHaversineDistance($lat1, $lon1, $lat2, $lon2): float
+    {
+        // Earth's radius in kilometers
+        $earthRadius = 6371;
+
+        // Convert degrees to radians
+        $lat1 = deg2rad($lat1);
+        $lon1 = deg2rad($lon1);
+        $lat2 = deg2rad($lat2);
+        $lon2 = deg2rad($lon2);
+
+        // Haversine formula
+        $latDelta = $lat2 - $lat1;
+        $lonDelta = $lon2 - $lon1;
+
+        $a = sin($latDelta / 2) * sin($latDelta / 2) +
+            cos($lat1) * cos($lat2) *
+            sin($lonDelta / 2) * sin($lonDelta / 2);
+
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+
+        return $earthRadius * $c;
+    }
+
+    /**
+     * Enhanced version of getNearbyChargePoints that calculates distance using Haversine formula
      * 
      * @param float $latitude Central latitude
      * @param float $longitude Central longitude
@@ -230,38 +385,4 @@ class ChargePointModel extends BaseModel
         // 4. Apply limit
         return array_slice($nearbyPoints, 0, $limit);
     }
-
-    /**
-     * Calculate distance between two points using Haversine formula
-     * 
-     * @param float $lat1 First point latitude
-     * @param float $lon1 First point longitude
-     * @param float $lat2 Second point latitude
-     * @param float $lon2 Second point longitude
-     * @return float Distance in kilometers
-     */
-    private function calculateHaversineDistance($lat1, $lon1, $lat2, $lon2): float
-    {
-        // Earth's radius in kilometers
-        $earthRadius = 6371;
-
-        // Convert degrees to radians
-        $lat1 = deg2rad($lat1);
-        $lon1 = deg2rad($lon1);
-        $lat2 = deg2rad($lat2);
-        $lon2 = deg2rad($lon2);
-
-        // Haversine formula
-        $latDelta = $lat2 - $lat1;
-        $lonDelta = $lon2 - $lon1;
-
-        $a = sin($latDelta / 2) * sin($latDelta / 2) +
-            cos($lat1) * cos($lat2) *
-            sin($lonDelta / 2) * sin($lonDelta / 2);
-
-        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
-
-        return $earthRadius * $c;
-    }
-
 }

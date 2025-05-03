@@ -4,13 +4,25 @@
  */
 class BaseController
 {
-    private function __construct()
+    protected function __construct()
     {
         // start the session if one is not already started
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
     }
+
+    /**
+     * Check if the current user has admin access
+     */
+    protected function checkAdminAccess()
+    {
+        if (!isset($_SESSION['user']) || $_SESSION['user']['role_id'] !== 1) {
+            $this->setMessage('error', 'Access denied. You do not have admin privileges.');
+            $this->redirect('login');
+        }
+    }
+
     /**
      * Check if user is logged in
      */

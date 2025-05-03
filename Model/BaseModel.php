@@ -1,5 +1,4 @@
 <?php
-
 namespace Model;
 
 use PDO;
@@ -8,220 +7,169 @@ use PDOStatement;
 
 class BaseModel
 {
-    // A reference to the PDO instance
+    /* ─────────────────────────── DB CONNECTION ─────────────────────────── */
     protected $db;
     private static $pdo = null;
 
-    private $query;
-    private $params = [];
-    private $table;
-
-    private $where = '';
-    private $whereParams = [];
-
-    /**
-     * Establishes a database connection using PDO.
-     * Implements singleton behavior to reuse the same connection instance.
-     */
     private static function connect()
     {
         if (self::$pdo === null) {
             try {
-                // Create a new PDO instance for the database connection
                 self::$pdo = new PDO(
-                    "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8",
+                    'mysql:host=' . DB_HOST . ';dbname=' . DB_NAME . ';charset=utf8',
                     DB_USER,
                     DB_PASSWORD,
-                    [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION] // Use exceptions for error handling
+                    [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
                 );
             } catch (PDOException $e) {
-                // Log the error and return null if the connection fails
-                error_log("Database Connection Failed: " . $e->getMessage());
+                error_log('DB connection failed: ' . $e->getMessage());
                 return null;
             }
         }
-
-        return self::$pdo; // Return the PDO instance
+        return self::$pdo;
     }
 
-    /**
-     * Initializes the BaseModel by setting up the database connection.
-     * Throws an error if the connection cannot be established.
-     */
     public function __construct()
     {
-        $this->db = self::connect(); // Establish connection
-        if ($this->db === null) {
-            die("Database connection error. Please check logs."); // Terminate if connection fails
-        }
+        $this->db = self::connect() ?? die('Database connection error.');
     }
 
-    /**
-     * Sets the table to operate on.
-     *
-     * @param string $table The name of the table.
-     * @return $this
-     */
-    public function table(string $table): BaseModel
+    /* ────────────────────────── QUERY STATE ────────────────────────────── */
+    private string $queryBase = '';          // SELECT … FROM … JOIN …
+    private string $whereClause = '';          // WHERE …
+    private array $whereParams = [];
+    private ?int $limit = null;
+    private int $offset = 0;
+    private array $params = [];          // INSERT / UPDATE params
+    private string $table = '';
+
+    /* ────────────────────────── BUILDER METHODS ────────────────────────── */
+    public function table(string $table): self
     {
-        $this->table = $table; // Set the active table
-        return $this; // Return the current instance to allow method chaining
-    }
-
-    /**
-     * Builds a SELECT query for the specified columns.
-     *
-     * @param string|array $columns The columns to select, defaults to all (`*`).
-     * @return $this
-     */
-    public function select($columns = '*'): BaseModel
-    {
-        // Support array input for column names
-        if (is_array($columns)) {
-            $columns = implode(', ', $columns);
-        }
-
-        $this->query = "SELECT $columns FROM {$this->table}"; // Formulate SELECT query
-        return $this; // Return current instance for chaining
-    }
-
-    /**
-     * Adds WHERE conditions to the query.
-     *
-     * @param string $column    The column name for the condition.
-     * @param string $operator  The comparison operator (`=`, `>`, `<`, etc.).
-     * @param mixed  $value     The value to compare the column against.
-     * @return $this
-     */
-    public function where(string $column, string $operator, $value): BaseModel
-    {
-        $safeParam = str_replace('.', '_', $column);
-
-        if ($this->where === '') {
-            $this->where = " WHERE $column $operator :$safeParam";
-        } else {
-            $this->where .= " AND $column $operator :$safeParam";
-        }
-
-        $this->whereParams[$safeParam] = $value;
-
+        $this->table = $table;
         return $this;
     }
 
-
-    /**
-     * Builds an INSERT query for the specified data.
-     *
-     * @param array $data Key-value pairs representing column names and their values.
-     * @return mixed The executed statement or query result.
-     */
-    public function insert(array $data)
+    public function select($columns = '*'): self
     {
-        // Create comma-separated lists for columns and placeholders
-        $columns = implode(', ', array_keys($data));
-        $placeholders = ':' . implode(', :', array_keys($data));
-
-        // Formulate the INSERT query
-        $this->query = "INSERT INTO {$this->table} ($columns) VALUES ($placeholders)";
-
-        // Store the data as the query parameters
-        $this->params = $data;
-
-        return $this->execute(); // Execute the query
-    }
-
-    public function join(string $table, string $first, string $operator, string $second): BaseModel
-    {
-        $this->query .= " JOIN $table ON $first $operator $second";
+        $cols = is_array($columns) ? implode(', ', $columns) : $columns;
+        $this->queryBase = "SELECT $cols FROM {$this->table}";
         return $this;
     }
 
-    /**
-     * Executes the current query and fetches all results as an array.
-     *
-     * @param int $fetchMode PDO fetch mode (default is `PDO::FETCH_ASSOC`).
-     * @return array The fetched rows.
-     */
-    public function get(int $fetchMode = PDO::FETCH_ASSOC): array
+    public function join(string $table, string $first, string $operator, string $second): self
     {
-        return $this->execute()->fetchAll($fetchMode); // Fetch all rows
+        $this->queryBase .= " JOIN $table ON $first $operator $second";
+        return $this;
     }
 
-    /**
-     * Executes the current query and fetches the first result.
-     *
-     * @param int $fetchMode PDO fetch mode (default is `PDO::FETCH_ASSOC`).
-     * @return mixed The first row or false if no rows are found.
-     */
-    public function first(int $fetchMode = PDO::FETCH_ASSOC)
+    public function where(string $column, string $operator, $value): self
     {
-        return $this->execute()->fetch($fetchMode); // Fetch one row
+        // Normalise placeholder name (e.g. cp.availability → cp_availability)
+        $param = preg_replace('/[^a-zA-Z0-9_]/', '_', $column);
+        $condition = "$column $operator :$param";
+
+        $this->whereClause
+            ? $this->whereClause .= " AND $condition"
+            : $this->whereClause = " WHERE $condition";
+
+        $this->whereParams[$param] = $value;
+        return $this;
     }
 
-    /**
-     * Executes the query and checks if it returned anything by returning a boolean value
-     *
-     * @param int $fetchMode
-     * @return bool
-     */
-    public function exists(int $fetchMode = PDO::FETCH_ASSOC): bool
+    public function limit(int $limit, int $offset = 0): self
+    {
+        $this->limit = $limit;
+        $this->offset = $offset;
+        return $this;
+    }
+
+    /* ────────────────────────── CRUD SHORT-CUTS ────────────────────────── */
+    public function get(int $mode = PDO::FETCH_ASSOC): array
+    {
+        return $this->execute()->fetchAll($mode);
+    }
+
+    public function first(int $mode = PDO::FETCH_ASSOC)
+    {
+        return $this->execute()->fetch($mode);
+    }
+
+    public function exists(): bool
     {
         return $this->execute()->rowCount() > 0;
     }
 
-
-    /**
-     * Updates records in the database.
-     *
-     * @param array $data The data to update.
-     * @return PDOStatement The executed statement.
-     */
-    public function update(array $data): PDOStatement
+    public function insert(array $data)
     {
-        if (empty($data)) {
-            throw new \InvalidArgumentException("Update data cannot be empty");
-        }
-
-        // Build SET clause
-        $setClauses = [];
-        $updateParams = [];
-
-        foreach ($data as $column => $value) {
-            $paramName = "update_" . $column;
-            $setClauses[] = "$column = :$paramName";
-            $updateParams[$paramName] = $value;
-        }
-
-        $setClause = implode(', ', $setClauses);
-
-        // 🔥 Completely rebuild correct UPDATE query
-        $this->query = "UPDATE {$this->table} SET $setClause" . $this->where;
-
-        // 🔥 Merge parameters
-        $this->params = $updateParams + $this->whereParams;
-
+        $cols = implode(', ', array_keys($data));
+        $holes = ':' . implode(', :', array_keys($data));
+        $this->queryBase = "INSERT INTO {$this->table} ($cols) VALUES ($holes)";
+        $this->params = $data;
         return $this->execute();
     }
 
+    public function update(array $data): PDOStatement
+    {
+        if (!$data) {
+            throw new \InvalidArgumentException('Update data cannot be empty');
+        }
 
+        $sets = [];
+        foreach ($data as $col => $val) {
+            $name = "upd_$col";
+            $sets[] = "$col = :$name";
+            $this->params[$name] = $val;
+        }
+        $this->queryBase = "UPDATE {$this->table} SET " . implode(', ', $sets);
+        return $this->execute();
+    }
 
-    /**
-     * Executes the currently built query with the provided parameters.
-     *
-     * @return PDOStatement The executed statement.
-     */
+    /* ────────────────────────── EXECUTION ──────────────────────────────── */
+    private function assemble(): string
+    {
+        $sql = $this->queryBase;
+
+        if ($this->whereClause) {
+            $sql .= $this->whereClause;
+        }
+
+        if ($this->limit !== null) {
+            $sql .= " LIMIT {$this->limit}";
+            if ($this->offset > 0) {
+                $sql .= " OFFSET {$this->offset}";
+            }
+        }
+
+        return $sql;
+    }
+
     private function execute(): PDOStatement
     {
-        // Prepare the query
-        $stmt = $this->db->prepare($this->query);
+        $sql = $this->assemble();
+        $allParams = array_merge($this->params, $this->whereParams);
 
-        // Execute with bound parameters
-        $stmt->execute($this->params);
+        // Uncomment for troubleshooting
+        // error_log("SQL  : $sql");
+        // error_log("PARAM: " . json_encode($allParams));
 
-        // Reset query and params to allow building new queries
-        $this->query = null;
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($allParams);
+
+        /* reset internal state so this instance can be reused safely */
+        $this->reset();
+
+        return $stmt;
+    }
+
+    private function reset(): void
+    {
+        $this->queryBase = '';
+        $this->whereClause = '';
+        $this->whereParams = [];
+        $this->limit = null;
+        $this->offset = 0;
         $this->params = [];
-
-        return $stmt; // Return the executed statement
+        $this->table = '';
     }
 }

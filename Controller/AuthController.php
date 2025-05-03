@@ -47,22 +47,30 @@ class AuthController
                     'name' => $first_name . ' ' . $last_name,
                     'email' => $email,
                     'phone' => $phone,
-                    'password' => $password,
+                    'password' => $password, // Password will be hashed in UserModel::createUser
                     'role_id' => 1,
                     'created_at' => date('Y-m-d H:i:s'),
                 ];
 
-                // create the user object
+                // create the user object (with hashed password)
                 $this->userModel->createUser($user);
+
+                // Get the user with all DB fields after creation
+                $createdUser = $this->userModel->getUserByEmail($email);
+
+                // Remove password from session data
+                unset($createdUser['password']);
 
                 // start the session if all checks pass
                 session_start();
 
-                $_SESSION['user'] = $user;
+                $_SESSION['user'] = $createdUser;
                 $_SESSION['loggedIn'] = true;
 
+                setcookie("loggedIn", true, time() + (86400 * 30), "/");
+
                 // if successful redirect to home
-                header("Location: /MVCProject/index.php");
+                header("Location: /PlugPoint/index.php?route=home");
                 exit(); // Added exit after redirect
             }
         }
@@ -71,7 +79,7 @@ class AuthController
         require 'View/auth/signup/main.php';
         $content = ob_get_clean();
 
-        require 'View/layouts/auth.php';
+        require 'View/layouts/main.php';
     }
 
     public function Login()
@@ -94,7 +102,8 @@ class AuthController
             if (empty($error)) {
                 $user = $this->userModel->getUserByEmail($email);
 
-                if ($user['password'] !== $password) {
+                // Use password_verify to check if entered password matches stored hash
+                if (!$this->userModel->verifyPassword($password, $user['password'])) {
                     $error = "Email or password is incorrect";
                 } else {
                     // Only start session and log in if password is correct
@@ -102,16 +111,13 @@ class AuthController
                     $first_name = explode(' ', $user['name'])[0];
                     $last_name = explode(' ', $user['name'])[1];
 
-                    setcookie("first_name", $first_name, time() + (86400 * 30), "/");
-                    setcookie("last_name", $last_name, time() + (86400 * 30), "/");
-                    setcookie("email", $user['email'], time() + (86400 * 30), "/");
-                    setcookie("phone", $user['phone'], time() + (86400 * 30), "/");
-
                     setcookie("loggedIn", true, time() + (86400 * 30), "/");
 
+                    // Remove password from session data for security
+                    unset($user['password']);
                     $_SESSION['user'] = $user;
 
-                    header("Location: /MVCProject/index.php");
+                    header("Location: /PlugPoint/index.php?route=home");
                     exit(); // Added exit after redirect
                 }
             }
@@ -121,16 +127,25 @@ class AuthController
         require 'View/auth/login/main.php';
         $content = ob_get_clean();
 
-        require 'View/layouts/auth.php';
+        require 'View/layouts/main.php';
     }
 
     public function Logout()
     {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // Clear all session data
+            session_start();
+            session_unset();
+            session_destroy();
+
+            // Clear cookies
+            setcookie("first_name", "", time() - 3600, "/");
+            setcookie("last_name", "", time() - 3600, "/");
             setcookie("loggedIn", "", time() - 3600, "/");
             setcookie("email", "", time() - 3600, "/");
+            setcookie("phone", "", time() - 3600, "/");
 
-            header("Location: /MVCProject/index.php");
+            header("Location: /PlugPoint/index.php?route=login");
             exit(); // Added exit after redirect
         }
     }

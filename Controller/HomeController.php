@@ -6,7 +6,8 @@ require_once 'Model/UserModel.php';
 
 class HomeController
 {
-    public function index() {
+    public function index()
+    {
         $title = "Welcome Home";
 
         //  load the content of the home page and store it in the content variable

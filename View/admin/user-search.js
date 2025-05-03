@@ -213,8 +213,12 @@ function updateUsersList(users) {
         row.className = 'hover:bg-gray-50';
         
         // Format the role
-        const roleName = user.role_id == 1 ? 'Admin' : 'User';
-        const roleClass = user.role_id == 1 ? 'bg-gray-100 text-gray-800' : 'bg-blue-100 text-blue-800';
+        const roleName = user.role_id == 1 ? 'Admin' : 
+                        user.role_id == 2 ? 'Homeowner' : 
+                        'User';
+        const roleClass = user.role_id == 1 ? 'bg-gray-100 text-gray-800' : 
+                      user.role_id == 2 ? 'bg-yellow-100 text-yellow-800' : 
+                      'bg-blue-100 text-blue-800';
         
         row.innerHTML = `
             <td class="px-6 py-4 whitespace-nowrap">${user.id}</td>
@@ -226,14 +230,19 @@ function updateUsersList(users) {
                     ${roleName}
                 </span>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap">${user.created_at}</td>
+
             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                 <button type="button" onclick="editUser(${user.id}, '${escapeHtml(user.name)}', '${escapeHtml(user.email)}', '${escapeHtml(user.phone)}', ${user.role_id})" class="text-indigo-600 hover:text-indigo-900 mr-3">
                     Edit
                 </button>
-                <button type="button" onclick="confirmDelete(${user.id}, '${escapeHtml(user.name)}')" class="text-red-600 hover:text-red-900">
-                    Delete
-                </button>
+                ${user.id === currentUser.id ? 
+                    `<button type="button" disabled class="text-gray-400 cursor-not-allowed">
+                        Delete
+                    </button>` : 
+                    `<button type="button" onclick="confirmDelete(${user.id}, '${escapeHtml(user.name)}')" class="text-red-600 hover:text-red-900">
+                        Delete
+                    </button>`
+                }
             </td>
         `;
         

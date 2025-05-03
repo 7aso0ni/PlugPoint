@@ -31,6 +31,13 @@
     </header>
 
     <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <!-- Store current user info for JavaScript -->
+        <script>
+            const currentUser = {
+                id: <?= json_encode($_SESSION['user']['id']) ?>,
+                name: <?= json_encode($_SESSION['user']['name']) ?>
+            };
+        </script>
         <!-- Display Messages -->
         <?php if (isset($_SESSION['message'])): ?>
             <div
@@ -87,7 +94,7 @@
         </div>
 
         <!-- Users table container -->
-        <div id="users-container" class="bg-white shadow overflow-hidden sm:rounded-lg">
+        <div id="users-container" class="bg-white shadow overflow-x-auto sm:rounded-lg">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
@@ -111,10 +118,7 @@
                             class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Role
                         </th>
-                        <th scope="col"
-                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Created At
-                        </th>
+
                         <th scope="col"
                             class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Actions
@@ -215,8 +219,9 @@
                                     <div class="mt-1">
                                         <select id="role" name="role_id" required
                                             class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
-                                            <option value="1">Regular User</option>
-                                            <option value="2">Administrator</option>
+                                            <option value="3">User</option>
+                                            <option value="1">Admin</option>
+                                            <option value="2">Homeowner</option>
                                         </select>
                                     </div>
                                 </div>
@@ -311,8 +316,9 @@
                                     <div class="mt-1">
                                         <select id="edit_role" name="role_id" required
                                             class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
-                                            <option value="1">Regular User</option>
-                                            <option value="2">Administrator</option>
+                                            <option value="3">Regular User</option>
+                                            <option value="1">Administrator</option>
+                                            <option value="2">Homeowner</option>
                                         </select>
                                     </div>
                                 </div>

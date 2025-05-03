@@ -36,7 +36,6 @@
                             <option value="">All Statuses</option>
                             <option value="Pending" <?= isset($_GET['status']) && $_GET['status'] === 'Pending' ? 'selected' : '' ?>>Pending</option>
                             <option value="Approved" <?= isset($_GET['status']) && $_GET['status'] === 'Approved' ? 'selected' : '' ?>>Approved</option>
-                            <option value="Completed" <?= isset($_GET['status']) && $_GET['status'] === 'Completed' ? 'selected' : '' ?>>Completed</option>
                             <option value="Canceled" <?= isset($_GET['status']) && $_GET['status'] === 'Canceled' ? 'selected' : '' ?>>Canceled</option>
                             <option value="Declined" <?= isset($_GET['status']) && $_GET['status'] === 'Declined' ? 'selected' : '' ?>>Declined</option>
                         </select>

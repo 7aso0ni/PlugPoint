@@ -34,17 +34,7 @@
                             class="px-3 py-2 rounded-md text-sm font-medium text-white hover:bg-indigo-500">
                             View Site
                         </a>
-                        <div class="ml-3 relative">
-                            <div class="flex items-center space-x-4">
-                                <span class="text-white"><?= htmlspecialchars($_SESSION['user']['name']) ?></span>
-                                <form method="POST" action="index.php?route=logout">
-                                    <button type="submit"
-                                        class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none">
-                                        Logout
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
+
                     </div>
                 </div>
             </div>
@@ -115,20 +105,6 @@
             <?= $content ?>
         </div>
     </div>
-
-    <!-- Footer -->
-    <footer class="bg-white p-4 shadow">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center">
-                <div class="text-gray-500 text-sm">
-                    &copy; <?= date('Y') ?> PlugPoint. All rights reserved.
-                </div>
-                <div class="text-gray-500 text-sm">
-                    Admin Panel v1.0
-                </div>
-            </div>
-        </div>
-    </footer>
 </body>
 
 </html>

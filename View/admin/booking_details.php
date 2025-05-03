@@ -158,10 +158,12 @@
                                 <div>
                                     <p class="text-sm text-gray-500">Customer</p>
                                     <p class="font-semibold text-gray-800">
-                                        <?= htmlspecialchars($booking['user_name']) ?></p>
+                                        <?= htmlspecialchars($booking['user_name']) ?>
+                                    </p>
                                     <p class="text-sm text-gray-600"><?= htmlspecialchars($booking['user_email']) ?></p>
                                     <p class="text-sm text-gray-600">
-                                        <?= htmlspecialchars($booking['user_phone'] ?? 'No phone provided') ?></p>
+                                        <?= htmlspecialchars($booking['user_phone'] ?? 'No phone provided') ?>
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -180,7 +182,8 @@
                                 <div>
                                     <p class="text-sm text-gray-500">Owner</p>
                                     <p class="font-semibold text-gray-800">
-                                        <?= htmlspecialchars($booking['owner_name']) ?></p>
+                                        <?= htmlspecialchars($booking['owner_name']) ?>
+                                    </p>
                                     <p class="text-sm text-gray-600"><?= htmlspecialchars($booking['owner_email']) ?>
                                     </p>
                                 </div>
@@ -205,8 +208,6 @@
                                         Pending</option>
                                     <option value="Approved" <?= $booking['status'] == 'Approved' ? 'selected' : '' ?>>
                                         Approved</option>
-                                    <option value="Completed" <?= $booking['status'] == 'Completed' ? 'selected' : '' ?>>
-                                        Completed</option>
                                     <option value="Canceled" <?= $booking['status'] == 'Canceled' ? 'selected' : '' ?>>
                                         Canceled</option>
                                     <option value="Declined" <?= $booking['status'] == 'Declined' ? 'selected' : '' ?>>

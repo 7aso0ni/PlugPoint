@@ -48,7 +48,7 @@ class AuthController
                     'email' => $email,
                     'phone' => $phone,
                     'password' => $password, // Password will be hashed in UserModel::createUser
-                    'role_id' => 1,
+                    'role_id' => 3, // Regular User role
                     'created_at' => date('Y-m-d H:i:s'),
                 ];
 

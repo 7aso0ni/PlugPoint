@@ -1,11 +1,3 @@
-<?php
-// Ensure this page is only accessible by admins
-if (!isset($_SESSION['user']) || $_SESSION['user']['role_id'] != 2) {
-    header("Location: /PlugPoint/index.php?route=login");
-    exit();
-}
-?>
-
 <div class="bg-gray-100 min-h-screen">
     <!-- Admin Header -->
     <header class="bg-white shadow">

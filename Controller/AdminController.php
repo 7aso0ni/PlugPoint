@@ -23,11 +23,7 @@ class AdminController extends BaseController
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
-
-        // $this->checkAdminAccess();
     }
-
-
 
     /**
      * Dashboard action
@@ -177,6 +173,9 @@ class AdminController extends BaseController
             $this->setMessage('error', 'Booking not found');
             $this->redirect('admin/bookings');
         }
+
+        // Get the full charge point details
+        $chargePoint = $this->chargePointModel->getChargePointById($booking['charge_point_id']);
 
         ob_start();
         require 'View/admin/booking_details.php';
@@ -565,7 +564,7 @@ class AdminController extends BaseController
         $userGrowth = $this->userModel->getUserGrowthStats($months);
 
         // Get top charge points
-        $topChargePoints = $this->bookingModel->getTopChargePoints(5);
+        $topChargePoints = $this->bookingModel->getTopChargePoints();
 
         ob_start();
         require 'View/admin/reports.php';

@@ -1,5 +1,4 @@
 <?php
-session_start();
 
 /* ───────────────────────── CONFIG  ───────────────────────── */
 define('DB_HOST', 'localhost');

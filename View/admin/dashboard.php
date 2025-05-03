@@ -1,11 +1,3 @@
-<?php
-// Ensure this page is only accessible by admins
-if (!isset($_SESSION['user']) || $_SESSION['user']['role_id'] != 2) {
-    header("Location: /PlugPoint/index.php?route=login");
-    exit();
-}
-?>
-
 <div class="bg-gray-100 min-h-screen">
     <!-- Admin Header -->
     <header class="bg-white shadow">
@@ -82,7 +74,8 @@ if (!isset($_SESSION['user']) || $_SESSION['user']['role_id'] != 2) {
                                     <dt class="text-sm font-medium text-gray-500 truncate">Charging Stations</dt>
                                     <dd class="flex items-baseline">
                                         <div class="text-2xl font-semibold text-gray-900">
-                                            <?= $stats['totalChargePoints'] ?></div>
+                                            <?= $stats['totalChargePoints'] ?>
+                                        </div>
                                     </dd>
                                 </dl>
                             </div>
@@ -112,7 +105,8 @@ if (!isset($_SESSION['user']) || $_SESSION['user']['role_id'] != 2) {
                                     <dt class="text-sm font-medium text-gray-500 truncate">Bookings (Pending)</dt>
                                     <dd class="flex items-baseline">
                                         <div class="text-2xl font-semibold text-gray-900">
-                                            <?= $stats['pendingBookings'] ?></div>
+                                            <?= $stats['pendingBookings'] ?>
+                                        </div>
                                     </dd>
                                 </dl>
                             </div>
@@ -180,9 +174,12 @@ if (!isset($_SESSION['user']) || $_SESSION['user']['role_id'] != 2) {
                                                 </p>
                                                 <div class="ml-2 flex-shrink-0 flex">
                                                     <p class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                                        <?= $booking['status'] === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                                                            ($booking['status'] === 'Confirmed' ? 'bg-green-100 text-green-800' :
-                                                                'bg-red-100 text-red-800') ?>">
+                                <?= $booking['status'] === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
+                                    ($booking['status'] === 'Approved' ? 'bg-green-100 text-green-800' :
+                                        ($booking['status'] === 'Completed' ? 'bg-blue-100 text-blue-800' :
+                                            ($booking['status'] === 'Canceled' ? 'bg-red-100 text-red-800' :
+                                                ($booking['status'] === 'Declined' ? 'bg-gray-100 text-gray-800' :
+                                                    'bg-purple-100 text-purple-800')))) ?>">
                                                         <?= $booking['status'] ?>
                                                     </p>
                                                 </div>
@@ -203,7 +200,7 @@ if (!isset($_SESSION['user']) || $_SESSION['user']['role_id'] != 2) {
                                                             d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
                                                             clip-rule="evenodd" />
                                                     </svg>
-                                                    <?= htmlspecialchars($booking['station_address']) ?>
+                                                    <?= htmlspecialchars($booking['address']) ?>
                                                 </p>
                                             </div>
                                             <div class="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">

@@ -3,12 +3,133 @@
 namespace Model;
 
 use PDO;
+use DateTime;
+use DateInterval;
 
 require_once 'BaseModel.php';
 
 class ChargePointModel extends BaseModel
 {
     const TABLE_NAME = "ChargePoints";
+
+    public function getTopChargePoints(int $limit = 5): array
+    {
+        // Sanitize the limit as an integer
+        $limit = max(1, (int) $limit);
+
+        $pastMonth = date('Y-m-d H:i:s', strtotime('-1 month'));
+
+        // Use the LIMIT directly in the query string, but use parameter for the date
+        $sql = "SELECT 
+            cp.id,
+            cp.address,
+            COUNT(b.id) AS total_bookings,
+            SUM(TIMESTAMPDIFF(HOUR, b.booking_date, b.due_date)) AS total_hours,
+            SUM(TIMESTAMPDIFF(HOUR, b.booking_date, b.due_date) * cp.price_per_kWh) AS revenue
+        FROM ChargePoints cp
+        JOIN " . self::TABLE_NAME . " b ON cp.id = b.charge_point_id
+        WHERE b.status IN ('Completed', 'Approved')
+        AND b.booking_date >= ?
+        GROUP BY cp.id, cp.address
+        ORDER BY total_bookings DESC
+        LIMIT " . $limit;
+
+        // Only parameterize the date, not the LIMIT
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$pastMonth]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /** Estimated revenue for the current calendar month */
+    public function getEstimatedMonthlyRevenue(): float
+    {
+        $firstDay = (new DateTime('first day of this month'))->format('Y-m-d');
+        $nextMonth = (new DateTime('first day of next month'))->format('Y-m-d');
+
+        $sql = "
+            SELECT SUM(b.kwh * cp.price_per_kWh) AS revenue
+            FROM   bookings b
+            JOIN   charge_points cp ON cp.id = b.charge_point_id
+            WHERE  b.created_at >= :from
+              AND  b.created_at <  :to
+        ";
+
+        $row = $this->query($sql, [
+            ':from' => $firstDay,
+            ':to' => $nextMonth,
+        ])->fetch();
+
+        return (float) ($row['revenue'] ?? 0);
+    }
+
+    /** Count bookings in a given status */
+    public function getBookingCountByStatus(string $status): int
+    {
+        $row = $this->query(
+            "SELECT COUNT(*) AS total FROM bookings WHERE status = :status",
+            [':status' => $status]
+        )->fetch();
+
+        return (int) $row['total'];
+    }
+
+    /** Latest N bookings with user & charge-point info */
+    public function getRecentBookingsWithDetails(int $limit = 5): array
+    {
+        $limit = max(1, $limit);
+
+        $sql = "
+            SELECT b.*,
+                   u.name AS user_name,
+                   cp.address
+            FROM   bookings b
+            JOIN   users         u  ON u.id = b.user_id
+            JOIN   charge_points cp ON cp.id = b.charge_point_id
+            ORDER  BY b.created_at DESC
+            LIMIT  $limit
+        ";
+
+        return $this->query($sql)->fetchAll();
+    }
+
+    /** Monthly stats for the past N months (oldest → newest) */
+    public function getMonthlyStats(int $months = 6): array
+    {
+        $months = max(1, $months);
+        $data = [];
+
+        // Pre-fill with zero rows
+        $cursor = new DateTime('first day of this month');
+        for ($i = $months - 1; $i >= 0; $i--) {
+            $key = $cursor->sub(new DateInterval("P{$i}M"))->format('Y-m');
+            $data[$key] = ['bookings' => 0, 'revenue' => 0.0];
+            $cursor->add(new DateInterval("P{$i}M"));
+        }
+
+        $sql = "
+            SELECT DATE_FORMAT(created_at, '%Y-%m') AS ym,
+                   COUNT(*)                       AS bookings,
+                   SUM(kwh * cp.price_per_kWh)    AS revenue
+            FROM   bookings b
+            JOIN   charge_points cp ON cp.id = b.charge_point_id
+            WHERE  created_at >= DATE_SUB(
+                       DATE_FORMAT(NOW(), '%Y-%m-01'),
+                       INTERVAL :months MONTH
+                   )
+            GROUP  BY ym
+        ";
+
+        foreach ($this->query($sql, [':months' => $months])->fetchAll() as $row) {
+            $data[$row['ym']] = [
+                'bookings' => (int) $row['bookings'],
+                'revenue' => (float) $row['revenue'],
+            ];
+        }
+
+        ksort($data);
+        return $data;
+    }
 
     /**
      * Get all charge points
@@ -159,6 +280,7 @@ class ChargePointModel extends BaseModel
             ->where('cp.id', '=', $id)
             ->first();
     }
+
 
     /**
      * Get charge points owned by a specific user

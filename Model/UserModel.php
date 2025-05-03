@@ -167,27 +167,51 @@ class UserModel extends BaseModel
     }
 
     /**
-     * Search users by name or email
+     * Search users by name, email or phone
+     * 
+     * @param string $search Search term
+     * @param int $limit Number of users per page
+     * @param int $offset Offset for pagination
+     * @return array Array of matching users
      */
-    public function searchUsers($search, $limit = 10, $offset = 0): array
+    public function searchUsers($search, $limit = null, $offset = null)
     {
-        // If using ORM approach isn't possible for OR conditions, use direct SQL
-        $sql = "SELECT * FROM " . self::TABLE_NAME . " 
-                WHERE name LIKE ? OR email LIKE ? OR phone LIKE ?
-                LIMIT ? OFFSET ?";
+        // Log search term for debugging
+        error_log("UserModel searchUsers - Search term: " . $search);
 
-        $params = [
-            "%$search%",
-            "%$search%",
-            "%$search%",
-            $limit,
-            $offset
-        ];
+        // Prepare search term for LIKE query
+        $searchTerm = '%' . $search . '%';
+
+        $sql = "SELECT * FROM users WHERE 
+                name LIKE :search OR 
+                email LIKE :search OR 
+                phone LIKE :search 
+                ORDER BY id DESC";
+
+        if ($limit !== null) {
+            $sql .= " LIMIT :limit";
+            if ($offset !== null) {
+                $sql .= " OFFSET :offset";
+            }
+        }
 
         $stmt = $this->db->prepare($sql);
-        $stmt->execute($params);
+        $stmt->bindParam(':search', $searchTerm, PDO::PARAM_STR);
 
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if ($limit !== null) {
+            $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
+            if ($offset !== null) {
+                $stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
+            }
+        }
+
+        $stmt->execute();
+        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Log result count for debugging
+        error_log("UserModel searchUsers - Results found: " . count($result));
+
+        return $result;
     }
 
     /**

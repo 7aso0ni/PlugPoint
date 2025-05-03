@@ -31,7 +31,7 @@
                 <h3 class="text-lg font-medium leading-6 text-gray-900">Monthly Statistics</h3>
             </div>
             <div class="p-6">
-                <div class="w-full h-80" id="monthlyStatsChart"></div>
+                <canvas class="w-full h-80" id="monthlyStatsChart"></canvas>
             </div>
         </div>
 
@@ -93,7 +93,7 @@
                     <h3 class="text-lg font-medium leading-6 text-gray-900">User Growth</h3>
                 </div>
                 <div class="p-6">
-                    <div class="w-full h-64" id="userGrowthChart"></div>
+                    <canvas class="w-full h-64" id="userGrowthChart"></canvas>
                 </div>
             </div>
         </div>

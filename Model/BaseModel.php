@@ -100,6 +100,31 @@ class BaseModel
         return $this;
     }
 
+    /** Filter column IN (v1, v2, …) */
+    public function whereIn(string $column, array $values): self
+    {
+        if (!$values) {
+            throw new \InvalidArgumentException('whereIn() needs at least one value');
+        }
+
+        // make one placeholder per value  (:col_0, :col_1 …)
+        $ph = [];
+        $counter = 0;
+        foreach ($values as $v) {
+            $name = preg_replace('/[^a-zA-Z0-9_]/', '_', $column) . '_' . $counter++;
+            $ph[] = ":$name";
+            $this->whereParams[$name] = $v;
+        }
+
+        $condition = "$column IN (" . implode(', ', $ph) . ')';
+        $this->whereClause
+            ? $this->whereClause .= " AND $condition"
+            : $this->whereClause = " WHERE $condition";
+
+        return $this;
+    }
+
+
     public function groupBy(string $column): self
     {
         $this->groupByClause

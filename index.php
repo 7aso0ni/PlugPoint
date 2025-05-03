@@ -13,6 +13,7 @@ require_once 'Controller/AccountController.php';
 require_once 'Controller/ChargePointController.php';
 require_once 'Controller/BookingController.php';
 require_once 'Controller/AdminController.php';
+require_once 'Controller/ApiController.php'; // Add API controller
 
 /* ───────────────────────── CONTROLLER INSTANCES ──────────── */
 $home = new Controller\HomeController();
@@ -21,6 +22,7 @@ $account = new Controller\AccountController();
 $chargers = new Controller\ChargePointController();
 $booking = new Controller\BookingController();
 $admin = new Controller\AdminController();
+$api = new Controller\ApiController(); // Create API controller instance
 
 /* ───────────────────────── ROUTING  ──────────────────────── */
 $route = $_GET['route'] ?? 'home';
@@ -69,8 +71,13 @@ switch ($route) {
     case 'get_available_slots':
         $booking->GetAvailableSlots();
         break;
+
+    // API routes
     case 'api/nearby_stations':
         $api->nearbyStations();
+        break;
+    case 'api/users': // Add this new API route for user search
+        $api->users();
         break;
 
     // Admin routes
@@ -80,25 +87,25 @@ switch ($route) {
     case 'admin/users':
         $admin->users();
         break;
-    case 'admin/add_user':
+    case 'admin/user_add':  // Changed to match the controller methods
         $admin->addUser();
         break;
-    case 'admin/update_user':
+    case 'admin/user_update':  // Changed to match the controller methods
         $admin->updateUser();
         break;
-    case 'admin/delete_user':
+    case 'admin/user_delete':  // Changed to match the controller methods
         $admin->deleteUser();
         break;
     case 'admin/charge_points':
         $admin->chargePoints();
         break;
-    case 'admin/add_charge_point':
+    case 'admin/charge_point_add':  // Changed to match the controller methods
         $admin->addChargePoint();
         break;
-    case 'admin/update_charge_point':
+    case 'admin/charge_point_update':  // Changed to match the controller methods
         $admin->updateChargePoint();
         break;
-    case 'admin/delete_charge_point':
+    case 'admin/charge_point_delete':  // Changed to match the controller methods
         $admin->deleteChargePoint();
         break;
     case 'admin/bookings':

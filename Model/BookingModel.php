@@ -3,12 +3,14 @@
 namespace Model;
 
 use PDO;
+use DateTime;
 
 require_once 'BaseModel.php';
 
 class BookingModel extends BaseModel
 {
-    private const TABLE = 'Bookings';
+    private const TABLE = 'bookings';
+    private const CHARGE_POINTS_TABLE = 'ChargePoints';
 
     /* ─────────────────────────── CORE BOOKING OPERATIONS ────────────────────────── */
 
@@ -193,27 +195,50 @@ class BookingModel extends BaseModel
 
     /**
      * Get estimated monthly revenue
+     * Calculates revenue for all non-canceled bookings, including those without estimated_price
      * 
-     * @return float Estimated revenue for current month
+     * @return float Estimated monthly revenue
      */
-    public function getEstimatedMonthlyRevenue(): float
+    public function getEstimatedMonthlyRevenue()
     {
-        $currentMonth = date('Y-m-01');
-        $nextMonth = date('Y-m-01', strtotime('+1 month'));
+        // Get current month start and end dates
+        $startDate = date('Y-m-01 00:00:00'); // First day of current month
+        $endDate = date('Y-m-t 23:59:59');    // Last day of current month
 
-        $sql = "SELECT SUM(
-            TIMESTAMPDIFF(HOUR, b.booking_date, b.due_date) * cp.price_per_kWh
-        ) as revenue
-        FROM " . self::TABLE . " b
-        JOIN ChargePoints cp ON b.charge_point_id = cp.id
-        WHERE b.status IN ('Completed', 'Confirmed')
-        AND b.booking_date >= ?
-        AND b.booking_date < ?";
+        // SQL query to get all non-canceled bookings
+        $sql = "SELECT b.*, cp.price_per_kWh 
+                FROM " . self::TABLE . " b 
+                JOIN ChargePoints cp ON b.charge_point_id = cp.id
+                WHERE b.status != 'Canceled' 
+                AND b.status != 'Declined' 
+                AND b.booking_date BETWEEN :start_date AND :end_date";
 
-        $stmt = $this->query($sql, [$currentMonth, $nextMonth]);
-        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':start_date', $startDate, PDO::PARAM_STR);
+        $stmt->bindParam(':end_date', $endDate, PDO::PARAM_STR);
+        $stmt->execute();
 
-        return (float) ($result['revenue'] ?? 0.0);
+        $totalRevenue = 0;
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            // Calculate estimated price if not set
+            if ($row['estimated_price'] === null) {
+                // Calculate estimated price based on duration and price per kWh
+                $bookingDate = new \DateTime($row['booking_date']);
+                $dueDate = new \DateTime($row['due_date']);
+                $duration = $bookingDate->diff($dueDate);
+                $durationHours = $duration->h + ($duration->i / 60); // Include minutes in hours
+
+                // Estimate kWh based on 3kW charging rate (3kWh per hour)
+                $estimatedKwh = $durationHours * 3;
+                $estimatedPrice = $estimatedKwh * $row['price_per_kWh'];
+
+                $totalRevenue += $estimatedPrice;
+            } else {
+                $totalRevenue += floatval($row['estimated_price']);
+            }
+        }
+
+        return $totalRevenue;
     }
 
     /**
@@ -249,29 +274,50 @@ class BookingModel extends BaseModel
             $monthStart = $monthDate . '-01 00:00:00';
             $monthEnd = date('Y-m-t 23:59:59', strtotime($monthStart));
 
-            // Get total bookings for this month
+            // Get total bookings for this month (include all statuses)
             $bookingCount = $this->table(self::TABLE)
                 ->where('booking_date', '>=', $monthStart)
                 ->where('booking_date', '<=', $monthEnd)
                 ->count('id', 'count') ?? 0;
 
-            // Get revenue for this month - we need custom SQL for the calculation
-            $revenueSql = "SELECT SUM(
-                TIMESTAMPDIFF(HOUR, b.booking_date, b.due_date) * cp.price_per_kWh
-            ) as revenue
-            FROM " . self::TABLE . " b
-            JOIN ChargePoints cp ON b.charge_point_id = cp.id
-            WHERE b.status IN ('Completed', 'Confirmed')
-            AND b.booking_date >= ?
-            AND b.booking_date <= ?";
+            // Get all bookings for this month
+            $sql = "SELECT b.*, cp.price_per_kWh 
+                    FROM " . self::TABLE . " b 
+                    JOIN " . self::CHARGE_POINTS_TABLE . " cp ON b.charge_point_id = cp.id
+                    WHERE b.booking_date >= ?
+                    AND b.booking_date <= ?";
 
-            $revenueStmt = $this->query($revenueSql, [$monthStart, $monthEnd]);
-            $revenueResult = $revenueStmt->fetch(PDO::FETCH_ASSOC);
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$monthStart, $monthEnd]);
+
+            $monthRevenue = 0;
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                // Skip canceled/declined bookings
+                if ($row['status'] === 'Canceled' || $row['status'] === 'Declined') {
+                    continue;
+                }
+
+                // Calculate estimated price if not set
+                if ($row['estimated_price'] === null) {
+                    // Calculate estimated price based on duration and price per kWh
+                    $bookingDate = new \DateTime($row['booking_date']);
+                    $dueDate = new \DateTime($row['due_date']);
+                    $durationHours = $bookingDate->diff($dueDate)->h;
+
+                    // Estimate kWh based on 3kW charging rate (3kWh per hour)
+                    $estimatedKwh = $durationHours * 3;
+                    $estimatedPrice = $estimatedKwh * $row['price_per_kWh'];
+
+                    $monthRevenue += $estimatedPrice;
+                } else {
+                    $monthRevenue += floatval($row['estimated_price']);
+                }
+            }
 
             $stats[] = [
                 'month' => date('M Y', strtotime($monthDate)),
                 'bookings' => $bookingCount,
-                'revenue' => $revenueResult['revenue'] ?? 0
+                'revenue' => $monthRevenue
             ];
         }
 
@@ -289,21 +335,22 @@ class BookingModel extends BaseModel
     {
         $pastMonth = date('Y-m-d H:i:s', strtotime('-1 month'));
 
-        $sql = "SELECT 
-            cp.id, 
-            cp.address, 
-            COUNT(b.id) as total_bookings,
-            SUM(TIMESTAMPDIFF(HOUR, b.booking_date, b.due_date)) as total_hours,
-            SUM(TIMESTAMPDIFF(HOUR, b.booking_date, b.due_date) * cp.price_per_kWh) as revenue
+        $sql = "SELECT cp.id, cp.address, COUNT(b.id) as total_bookings,
+                SUM(COALESCE(b.estimated_price, 
+                    TIMESTAMPDIFF(HOUR, b.booking_date, b.due_date) * cp.price_per_kWh
+                )) as revenue
         FROM ChargePoints cp
-        JOIN " . self::TABLE . " b ON cp.id = b.charge_point_id
-        WHERE b.status IN ('Completed', 'Confirmed')
-        AND b.booking_date >= ?
+        LEFT JOIN bookings b ON cp.id = b.charge_point_id
+        WHERE b.status NOT IN ('Canceled', 'Declined')
+        AND b.booking_date >= :date
         GROUP BY cp.id, cp.address
         ORDER BY total_bookings DESC
-        LIMIT ?";
+        LIMIT :limit";
 
-        $stmt = $this->query($sql, [$pastMonth, $limit]);
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindValue(':date', $pastMonth, PDO::PARAM_STR);
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 

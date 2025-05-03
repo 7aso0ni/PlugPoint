@@ -3,29 +3,32 @@
 namespace Controller;
 
 use BaseController;
+use Model\UserModel;
 use Model\ChargePointModel;
 
 require_once 'BaseController.php';
+require_once 'Model/UserModel.php';
+require_once 'Model/ChargePointModel.php';
 
 class ApiController extends BaseController
 {
     private $chargePointModel;
+    private $userModel;
 
     public function __construct()
     {
+        // Initialize models
         $this->chargePointModel = new ChargePointModel();
+        $this->userModel = new UserModel();
+
+        // Make sure session is started
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
     }
 
     /**
      * Get nearby charging stations
-     * 
-     * This endpoint returns charging stations near a given location
-     * 
-     * URL parameters:
-     * - lat: Latitude (required)
-     * - lng: Longitude (required)
-     * - radius: Search radius in kilometers (optional, default 5)
-     * - exclude: ID of station to exclude (optional)
      */
     public function nearbyStations()
     {
@@ -56,6 +59,79 @@ class ApiController extends BaseController
 
         // Return stations
         $this->outputJson(['stations' => $stations]);
+    }
+
+    /**
+     * API endpoint for getting users with search and pagination
+     */
+    public function users()
+    {
+        // Check if user is admin
+        $this->checkAdminAccess();
+
+        // Set content type to JSON
+        header('Content-Type: application/json');
+
+        // Get pagination parameters
+        $currentPage = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
+        $perPage = 10;
+        $offset = ($currentPage - 1) * $perPage;
+
+        // Get search parameter with proper sanitization
+        $search = isset($_GET['search']) ? trim($_GET['search']) : '';
+
+        // Log search parameter for debugging
+        error_log("API Users - Search parameter: " . $search);
+
+        try {
+            // Get users with pagination
+            if (!empty($search)) {
+                $users = $this->userModel->searchUsers($search, $perPage, $offset);
+                $totalUsers = $this->userModel->getTotalSearchResults($search);
+
+                // Log search results for debugging
+                error_log("Search results count: " . count($users) . ", Total: " . $totalUsers);
+            } else {
+                $users = $this->userModel->getAllUsers($perPage, $offset);
+                $totalUsers = $this->userModel->getTotalUsers();
+
+                // Log all users for debugging
+                error_log("All users count: " . count($users) . ", Total: " . $totalUsers);
+            }
+
+            $totalPages = ceil($totalUsers / $perPage);
+
+            // Calculate pagination data
+            $paginationData = [
+                'current_page' => $currentPage,
+                'total_pages' => $totalPages,
+                'total_items' => $totalUsers,
+                'per_page' => $perPage,
+                'start' => min($totalUsers, $offset + 1),
+                'end' => min($totalUsers, $offset + $perPage)
+            ];
+
+            // Return JSON response
+            $response = [
+                'success' => true,
+                'users' => $users,
+                'pagination' => $paginationData
+            ];
+
+            echo json_encode($response);
+
+        } catch (\Exception $e) {
+            error_log("API Users Error: " . $e->getMessage());
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'message' => 'An error occurred while fetching users',
+                'error' => $e->getMessage()
+            ]);
+        }
+
+        // Exit to prevent additional output
+        exit;
     }
 
     /**

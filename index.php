@@ -3,8 +3,9 @@
 /* ───────────────────────── CONFIG  ───────────────────────── */
 define('DB_HOST', 'localhost');
 define('DB_NAME', 'mvc');
-define('DB_USER', 'admin');
-define('DB_PASSWORD', 'admin');
+define('DB_USER', 'root');
+define('DB_PASSWORD', '');
+
 
 /* ───────────────────────── AUTOLOAD / REQUIRE ────────────── */
 require_once 'Controller/HomeController.php';
@@ -120,6 +121,27 @@ switch ($route) {
     case 'admin/reports':
         $admin->reports();
         break;
+    case 'homeowner/add_charger':
+    $chargers->addCharger();
+    break;
+case 'homeowner/save_charger':
+    $chargers->saveCharger();
+    break;
+case 'homeowner/my_chargers':
+    $controller = new Controller\ChargePointController();
+    $controller->myChargers();
+    break;
+case 'edit_charger':
+        (new \Controller\ChargePointController())->editCharger();
+        break;
+
+case 'delete_charger':
+    $controller = new Controller\ChargePointController();
+    $controller->deleteCharger(); // handles $_POST['id']
+    break;
+
+
+
 
     case 'home':
     default:

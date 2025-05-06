@@ -270,6 +270,27 @@ class ChargePointModel extends BaseModel
             ->where('id', '=', $id)
             ->update($data);
     }
+public function getChargerById($id): ?array {
+    return $this->table(self::TABLE_NAME)->select('*')->where('id', '=', $id)->first();
+}
+
+public function updateCharger($id, $address, $price, $availability, $image_url)
+{
+    return $this->table(self::TABLE_NAME)
+        ->where('id', '=', $id)
+        ->update([
+            'address' => $address,
+            'price_per_kWh' => $price,
+            'availability' => $availability,
+            'image_url' => $image_url,
+        ]);
+}
+
+
+
+public function deleteCharger($id): void {
+    $this->table(self::TABLE_NAME)->where('id', '=', $id)->delete();
+}
 
     /**
      * Update availability status

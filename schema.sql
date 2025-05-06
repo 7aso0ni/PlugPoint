@@ -29,24 +29,16 @@ CREATE TABLE `Bookings` (
   `booking_date` datetime NOT NULL,
   `due_date` datetime DEFAULT NULL,
   `status` enum('Pending','Approved','Declined','Canceled') DEFAULT 'Pending',
+  `estimated_kwh` decimal(7,2) DEFAULT NULL,
+  `estimated_price` decimal(10,2) DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `user_id` (`user_id`),
   KEY `charge_point_id` (`charge_point_id`),
   CONSTRAINT `bookings_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `Users` (`id`) ON DELETE CASCADE,
   CONSTRAINT `bookings_ibfk_2` FOREIGN KEY (`charge_point_id`) REFERENCES `ChargePoints` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=34 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `Bookings`
---
-
-LOCK TABLES `Bookings` WRITE;
-/*!40000 ALTER TABLE `Bookings` DISABLE KEYS */;
-INSERT INTO `Bookings` VALUES (7,12,1,'2025-04-20 10:00:00','2025-04-27 10:00:00','Canceled','2025-04-29 06:39:52'),(8,12,2,'2025-04-15 10:00:00','2025-05-15 10:00:00','Approved','2025-04-29 06:39:52'),(9,12,2,'2025-04-26 10:00:00','2025-04-28 10:00:00','Pending','2025-04-29 06:39:52'),(10,12,1,'2025-03-10 10:00:00','2025-03-24 10:00:00','Declined','2025-04-29 06:39:52'),(11,12,2,'2025-03-01 10:00:00','2025-03-07 10:00:00','Declined','2025-04-29 06:39:52');
-/*!40000 ALTER TABLE `Bookings` ENABLE KEYS */;
-UNLOCK TABLES;
 
 --
 -- Table structure for table `ChargePoints`
@@ -68,18 +60,31 @@ CREATE TABLE `ChargePoints` (
   PRIMARY KEY (`id`),
   KEY `owner_id` (`owner_id`),
   CONSTRAINT `chargepoints_ibfk_1` FOREIGN KEY (`owner_id`) REFERENCES `Users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `ChargePoints`
+-- Table structure for table `ChargerProducts`
 --
 
-LOCK TABLES `ChargePoints` WRITE;
-/*!40000 ALTER TABLE `ChargePoints` DISABLE KEYS */;
-INSERT INTO `ChargePoints` VALUES (1,1,'5 The Crescent, Salford, M5 4WT',53.483710,-2.270110,0.25,1,'images/charger1.jpg','2025-03-13 20:38:19'),(2,1,'123 Green St, City',40.712776,-74.005974,0.20,1,'https://example.com/image1.jpg','2025-04-29 06:27:06'),(3,2,'456 Solar Ave, City',40.730610,-73.935242,0.18,1,'https://example.com/image2.jpg','2025-04-29 06:27:06');
-/*!40000 ALTER TABLE `ChargePoints` ENABLE KEYS */;
-UNLOCK TABLES;
+DROP TABLE IF EXISTS `ChargerProducts`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `ChargerProducts` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `title` varchar(100) NOT NULL,
+  `type` varchar(50) NOT NULL,
+  `specs` varchar(255) NOT NULL,
+  `connector` varchar(100) NOT NULL,
+  `status` enum('Available','Limited','Premium') DEFAULT 'Available',
+  `rating` decimal(2,1) NOT NULL DEFAULT '0.0',
+  `reviews` int NOT NULL DEFAULT '0',
+  `price` decimal(6,2) NOT NULL,
+  `image_url` varchar(255) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
 -- Table structure for table `Messages`
@@ -99,17 +104,32 @@ CREATE TABLE `Messages` (
   KEY `receiver_id` (`receiver_id`),
   CONSTRAINT `messages_ibfk_1` FOREIGN KEY (`sender_id`) REFERENCES `Users` (`id`) ON DELETE CASCADE,
   CONSTRAINT `messages_ibfk_2` FOREIGN KEY (`receiver_id`) REFERENCES `Users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `Messages`
+-- Table structure for table `ProductRentals`
 --
 
-LOCK TABLES `Messages` WRITE;
-/*!40000 ALTER TABLE `Messages` DISABLE KEYS */;
-/*!40000 ALTER TABLE `Messages` ENABLE KEYS */;
-UNLOCK TABLES;
+DROP TABLE IF EXISTS `ProductRentals`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `ProductRentals` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `user_id` int NOT NULL,
+  `product_id` int NOT NULL,
+  `rental_start` datetime NOT NULL,
+  `rental_end` datetime NOT NULL,
+  `total_price` decimal(10,2) NOT NULL,
+  `status` enum('Pending','Confirmed','Canceled','Completed') DEFAULT 'Pending',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `user_id` (`user_id`),
+  KEY `product_id` (`product_id`),
+  CONSTRAINT `productrentals_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `Users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `productrentals_ibfk_2` FOREIGN KEY (`product_id`) REFERENCES `ChargerProducts` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
 -- Table structure for table `Roles`
@@ -125,16 +145,6 @@ CREATE TABLE `Roles` (
   UNIQUE KEY `role_name` (`role_name`)
 ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `Roles`
---
-
-LOCK TABLES `Roles` WRITE;
-/*!40000 ALTER TABLE `Roles` DISABLE KEYS */;
-INSERT INTO `Roles` VALUES (1,'Admin'),(2,'Homeowner'),(3,'User');
-/*!40000 ALTER TABLE `Roles` ENABLE KEYS */;
-UNLOCK TABLES;
 
 --
 -- Table structure for table `users`
@@ -155,18 +165,8 @@ CREATE TABLE `users` (
   UNIQUE KEY `email` (`email`),
   KEY `role_id` (`role_id`),
   CONSTRAINT `users_ibfk_1` FOREIGN KEY (`role_id`) REFERENCES `Roles` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=36 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `users`
---
-
-LOCK TABLES `users` WRITE;
-/*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES (1,'Lee Griffiths','lee@lee.com','hashedpassword123',2,'2025-03-13 20:38:19',''),(2,'User Lee Griffiths','user@user.com','hashedpassword123',3,'2025-03-13 20:38:19',''),(3,'Admin User','admin@admin.com','hashedpassword123',1,'2025-03-13 20:38:19',''),(12,'asdfs asdf','janedoe@gmail.com','janedoe',1,'2025-04-16 16:00:28','1234345678'),(13,'John Doe','johndoe@gmail.com','johndoe',1,'2025-04-24 13:52:35','12345678');
-/*!40000 ALTER TABLE `users` ENABLE KEYS */;
-UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -177,4 +177,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-04-29 20:24:31
+-- Dump completed on 2025-05-06 17:32:04

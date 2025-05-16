@@ -72,6 +72,12 @@ switch ($route) {
     case 'get_available_slots':
         $booking->GetAvailableSlots();
         break;
+    case 'booking/approve':
+        $booking->ApproveBooking();
+        break;
+    case 'booking/decline':
+        $booking->DeclineBooking();
+        break;
 
     // API routes
     case 'api/nearby_stations':

@@ -11,8 +11,9 @@ document.addEventListener('DOMContentLoaded', () => {
       altInput : true,
       altFormat: 'F j, Y',
       minDate  : 'today',
-      maxDate  : new Date().fp_incr(30),   // +30 days
+      maxDate  : new Date().fp_incr(365),   // Show dates for a full year ahead
       disable  : booked,                   // disable full days that are booked
+      showMonths: 1,                       // Show two months at once for better visibility
       onChange : ([d]) => {
         const ymd = fp.formatDate(d, 'Y-m-d');
         document.getElementById('selected-date-display').textContent = fp.altInput.value;

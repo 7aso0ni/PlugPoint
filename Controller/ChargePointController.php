@@ -186,11 +186,49 @@ class ChargePointController extends BaseController {
 
     public function saveCharger() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $location = $_POST['location'] ?? '';
-            $price = $_POST['price'] ?? '';
+            // Get form data
+            $location = trim($_POST['location'] ?? '');
+            $price = floatval($_POST['price'] ?? 0);
             $available_from = $_POST['available_from'] ?? '';
             $available_to = $_POST['available_to'] ?? '';
+            $latitude = floatval($_POST['latitude'] ?? 0);
+            $longitude = floatval($_POST['longitude'] ?? 0);
             $user_id = $_SESSION['user']['id'] ?? null;
+            
+            // Validation
+            $errors = [];
+            
+            if (empty($location)) {
+                $errors[] = "Location is required";
+            }
+            
+            if ($price <= 0) {
+                $errors[] = "Price must be greater than zero";
+            }
+            
+            if ($latitude == 0 || $longitude == 0) {
+                $errors[] = "Please select a valid location on the map";
+            }
+            
+            if (!$user_id) {
+                $errors[] = "You must be logged in to add a charger";
+                header('Location: index.php?route=login');
+                exit();
+            }
+            
+            // Check if user has permission to add chargers (must be a charger owner)
+            if (!isset($_SESSION['user']['role_id']) || $_SESSION['user']['role_id'] != 2) {
+                $errors[] = "You don't have permission to add chargers";
+                header('Location: index.php?route=home');
+                exit();
+            }
+            
+            // If there are validation errors, redirect back with error messages
+            if (!empty($errors)) {
+                $_SESSION['errors'] = $errors;
+                header('Location: index.php?route=homeowner/add_charger');
+                exit();
+            }
 
             // Handle optional image upload
             $image_path = null;
@@ -199,49 +237,71 @@ class ChargePointController extends BaseController {
                 if (!is_dir($target_dir)) {
                     mkdir($target_dir, 0755, true);
                 }
+                
+                // Validate file type
+                $allowed_types = ['image/jpeg', 'image/png', 'image/gif'];
+                $file_type = $_FILES['image']['type'];
+                
+                if (!in_array($file_type, $allowed_types)) {
+                    $_SESSION['errors'] = ["Only JPG, PNG and GIF images are allowed"];
+                    header('Location: index.php?route=homeowner/add_charger');
+                    exit();
+                }
+                
+                // Validate file size (max 5MB)
+                if ($_FILES['image']['size'] > 5 * 1024 * 1024) {
+                    $_SESSION['errors'] = ["Image size should not exceed 5MB"];
+                    header('Location: index.php?route=homeowner/add_charger');
+                    exit();
+                }
 
                 $filename = uniqid() . '_' . basename($_FILES["image"]["name"]);
                 $target_file = $target_dir . $filename;
 
                 if (move_uploaded_file($_FILES["image"]["tmp_name"], $target_file)) {
                     $image_path = $target_file;
+                } else {
+                    $_SESSION['errors'] = ["Failed to upload image"];
+                    header('Location: index.php?route=homeowner/add_charger');
+                    exit();
                 }
             }
 
-            if ($user_id) {
-                try {
-                    $db = new \PDO('mysql:host=' . DB_HOST . ';dbname=' . DB_NAME, DB_USER, DB_PASSWORD);
-                    $db->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+            try {
+                $db = new \PDO('mysql:host=' . DB_HOST . ';dbname=' . DB_NAME, DB_USER, DB_PASSWORD);
+                $db->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
 
-                    $stmt = $db->prepare("
-                    INSERT INTO ChargePoints 
-                        (owner_id, address, latitude, longitude, price_per_kWh, availability, image_url) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                $stmt = $db->prepare("
+                INSERT INTO ChargePoints 
+                    (owner_id, address, latitude, longitude, price_per_kWh, availability, image_url) 
+                VALUES (?, ?, ?, ?, ?, ?, ?)
                 ");
 
-                    // Placeholder values for latitude and longitude
-                    $latitude = 0.0;
-                    $longitude = 0.0;
-                    $availability = 1;
+                // Availability is set to 1 (available) by default
+                $availability = 1;
 
-                    $stmt->execute([
-                        $user_id,
-                        $location,
-                        $latitude,
-                        $longitude,
-                        $price,
-                        $availability,
-                        $image_path
-                    ]);
-
-                    header('Location: index.php?route=chargepoints');
-                    exit();
-                } catch (\PDOException $e) {
-                    echo "Database error: " . $e->getMessage();
-                }
-            } else {
-                echo "Unauthorized access.";
+                $stmt->execute([
+                    $user_id,
+                    $location,
+                    $latitude,
+                    $longitude,
+                    $price,
+                    $availability,
+                    $image_path
+                ]);
+                
+                $_SESSION['success'] = "Charger added successfully!";
+                header('Location: index.php?route=homeowner/my_chargers');
+                exit();
+            } catch (\PDOException $e) {
+                $_SESSION['errors'] = ["Database error: " . $e->getMessage()];
+                header('Location: index.php?route=homeowner/add_charger');
+                exit();
             }
+        } else {
+            // If not POST request, redirect to the form
+            header('Location: index.php?route=homeowner/add_charger');
+            exit();
         }
     }
 
@@ -254,6 +314,13 @@ class ChargePointController extends BaseController {
         $userId = $_SESSION['user']['id'];
         $title = 'My Chargers';
         $myChargers = $this->chargePointModel->getChargePointsByOwner($userId);
+        
+        // Fetch pending bookings for each charger
+        $chargerBookings = [];
+        foreach ($myChargers as $charger) {
+            $pendingBookings = $this->bookingModel->getPendingBookingsByChargePoint($charger['id']);
+            $chargerBookings[$charger['id']] = $pendingBookings;
+        }
 
         ob_start();
         require 'View/ChargePoints/my_chargers.php';

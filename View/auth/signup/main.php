@@ -127,3 +127,38 @@
         </div>
     </div>
 </main>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get all radio buttons
+        const radioButtons = document.querySelectorAll('input[name="user_type"]');
+        
+        // Add click event to each radio button's parent div
+        document.querySelectorAll('input[name="user_type"]').forEach(radio => {
+            const parentDiv = radio.closest('.border');
+            
+            parentDiv.addEventListener('click', function() {
+                // Uncheck all radio buttons and reset styles
+                radioButtons.forEach(rb => {
+                    rb.checked = false;
+                    const div = rb.closest('.border');
+                    div.classList.remove('border-green-500');
+                    div.classList.add('border-gray-300');
+                    div.querySelector('.h-3').classList.add('hidden');
+                });
+                
+                // Check the clicked radio button and update styles
+                radio.checked = true;
+                parentDiv.classList.remove('border-gray-300');
+                parentDiv.classList.add('border-green-500');
+                parentDiv.querySelector('.h-3').classList.remove('hidden');
+            });
+        });
+        
+        // Set EV Owner as default selection
+        if (radioButtons.length > 0) {
+            const evOwnerDiv = document.getElementById('ev_owner').closest('.border');
+            evOwnerDiv.click();
+        }
+    });
+</script>

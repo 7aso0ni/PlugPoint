@@ -34,7 +34,13 @@
 
                         <?php if (!empty($_SESSION['user']) && ($_SESSION['user']['role_id'] ?? 0) === 2): ?>
                             <a href="index.php?route=homeowner/add_charger" class="text-sm font-medium hover:text-green-600">Add Charger</a>
-                                <a href="index.php?route=homeowner/my_chargers" class="text-sm font-medium hover:text-green-600">My Chargers</a>
+                            <a href="index.php?route=homeowner/my_chargers" class="text-sm font-medium hover:text-green-600">My Chargers</a>
+                        <?php endif; ?>
+                        
+                        <?php if (!empty($_SESSION['user']) && ($_SESSION['user']['role_id'] ?? 0) === 1): ?>
+                            <a href="index.php?route=admin/dashboard" class="text-sm font-medium text-purple-600 hover:text-purple-800 font-bold">
+                                <i class="fas fa-tachometer-alt mr-1"></i> Admin Dashboard
+                            </a>
                         <?php endif; ?>
 
                     </nav>

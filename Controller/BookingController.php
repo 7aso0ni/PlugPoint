@@ -62,7 +62,15 @@ class BookingController extends BaseController
         if (!$cp['availability']) {
             $error = "This charging station is currently unavailable";
             $this->setMessage('error', $error);
-            $this->redirect('chargepoint&id=' . $cpId);
+            $this->redirect('chargepoints/details&id=' . $cpId);
+            return;
+        }
+        
+        // Check if the user is the owner of the charge point
+        if ($cp['owner_id'] == $_SESSION['user']['id']) {
+            $error = "You cannot book your own charging station";
+            $this->setMessage('error', $error);
+            $this->redirect('chargepoints/details&id=' . $cpId);
             return;
         }
 
@@ -354,5 +362,111 @@ class BookingController extends BaseController
         $content = ob_get_clean();
 
         require 'View/layouts/main.php';
+    }
+    
+    /**
+     * Approve a booking request (for charger owners)
+     */
+    public function ApproveBooking() {
+        if (!$this->isLoggedIn()) {
+            $this->redirect('login');
+            return;
+        }
+
+        $userId = $_SESSION['user']['id'];
+        $bookingId = $_POST['booking_id'] ?? null;
+
+        if (!$bookingId) {
+            $this->setMessage('error', 'Missing booking ID');
+            $this->redirect('homeowner/my_chargers');
+            return;
+        }
+
+        // Get the booking details
+        $booking = $this->bookingModel->getBookingById($bookingId);
+        if (!$booking) {
+            $this->setMessage('error', 'Booking not found');
+            $this->redirect('homeowner/my_chargers');
+            return;
+        }
+        
+        // Get the charge point to verify ownership
+        $chargePoint = $this->chargePointModel->getChargePointById($booking['charge_point_id']);
+        if (!$chargePoint || $chargePoint['owner_id'] != $userId) {
+            $this->setMessage('error', 'You do not have permission to approve this booking');
+            $this->redirect('homeowner/my_chargers');
+            return;
+        }
+
+        // Verify booking is in Pending status
+        if ($booking['status'] !== 'Pending') {
+            $this->setMessage('error', 'This booking is no longer pending');
+            $this->redirect('homeowner/my_chargers');
+            return;
+        }
+
+        // Update booking status to Approved
+        $result = $this->bookingModel->updateBookingStatus($bookingId, 'Approved');
+        
+        if ($result) {
+            $this->setMessage('success', 'Booking request approved successfully');
+        } else {
+            $this->setMessage('error', 'Failed to approve booking. Please try again.');
+        }
+        
+        $this->redirect('homeowner/my_chargers');
+    }
+    
+    /**
+     * Decline a booking request (for charger owners)
+     */
+    public function DeclineBooking() {
+        if (!$this->isLoggedIn()) {
+            $this->redirect('login');
+            return;
+        }
+
+        $userId = $_SESSION['user']['id'];
+        $bookingId = $_POST['booking_id'] ?? null;
+
+        if (!$bookingId) {
+            $this->setMessage('error', 'Missing booking ID');
+            $this->redirect('homeowner/my_chargers');
+            return;
+        }
+
+        // Get the booking details
+        $booking = $this->bookingModel->getBookingById($bookingId);
+        if (!$booking) {
+            $this->setMessage('error', 'Booking not found');
+            $this->redirect('homeowner/my_chargers');
+            return;
+        }
+        
+        // Get the charge point to verify ownership
+        $chargePoint = $this->chargePointModel->getChargePointById($booking['charge_point_id']);
+        if (!$chargePoint || $chargePoint['owner_id'] != $userId) {
+            $this->setMessage('error', 'You do not have permission to decline this booking');
+            $this->redirect('homeowner/my_chargers');
+            return;
+        }
+
+        // Verify booking is in Pending status
+        if ($booking['status'] !== 'Pending') {
+            $this->setMessage('error', 'This booking is no longer pending');
+            $this->redirect('homeowner/my_chargers');
+            return;
+        }
+
+        // Update booking status to Declined
+        $result = $this->bookingModel->updateBookingStatus($bookingId, 'Declined');
+        
+        if ($result) {
+            $this->setMessage('success', 'Booking request declined successfully');
+        } else {
+            $this->setMessage('error', 'Failed to decline booking. Please try again.');
+        }
+        
+        $this->redirect('homeowner/my_chargers');
     }
 }

@@ -440,4 +440,22 @@ class BookingModel extends BaseModel
             ->where('charge_point_id', '=', $chargePointId)
             ->exists();
     }
+    
+    /**
+     * Get pending bookings for a specific charge point with user details
+     * 
+     * @param int $chargePointId Charge point ID
+     * @return array List of pending bookings with user details
+     */
+    public function getPendingBookingsByChargePoint($chargePointId): array
+    {
+        return $this->table(self::TABLE . ' AS b')
+            ->select('b.*, u.name AS user_name, u.email AS user_email, cp.price_per_kWh')
+            ->join('Users AS u', 'b.user_id', '=', 'u.id')
+            ->join('ChargePoints AS cp', 'b.charge_point_id', '=', 'cp.id')
+            ->where('b.charge_point_id', '=', $chargePointId)
+            ->where('b.status', '=', 'Pending')
+            ->orderBy('b.booking_date', 'ASC')
+            ->get();
+    }
 }

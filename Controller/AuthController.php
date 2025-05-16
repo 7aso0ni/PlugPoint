@@ -26,6 +26,7 @@ class AuthController
             $phone = $_POST['phone'] ?? '';
             $password = $_POST['password'] ?? '';
             $confirm_password = $_POST['confirm_password'] ?? '';
+            $user_type = $_POST['user_type'] ?? 'ev_owner'; // Default to ev_owner if not set
 
             // check if any of the fields are empty and show the error
             if (empty(trim($first_name)) || empty(trim($last_name)) || empty(trim($email)) || empty(trim($phone)) || empty(trim($password)) || empty(trim($confirm_password))) {
@@ -43,12 +44,18 @@ class AuthController
 
             // Only create user if there are no errors
             if (empty($error)) {
+                // Set role_id based on user_type
+                $role_id = 3; // Default to regular user (EV Owner)
+                if ($user_type === 'charger_host') {
+                    $role_id = 2; // Charger Host role
+                }
+
                 $user = [
                     'name' => $first_name . ' ' . $last_name,
                     'email' => $email,
                     'phone' => $phone,
                     'password' => $password, // Password will be hashed in UserModel::createUser
-                    'role_id' => 3, // Regular User role
+                    'role_id' => $role_id,
                     'created_at' => date('Y-m-d H:i:s'),
                 ];
 

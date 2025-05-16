@@ -134,6 +134,15 @@
                 </button>
             </nav>
         </div>
+        
+        <!-- Map Section -->        
+        <div class="mt-12 pt-6 border-t border-gray-200">
+            <h2 class="text-2xl font-bold mb-6">Charging Stations Map</h2>
+            <div id="chargepoints-map" class="h-96 w-full rounded-lg border border-gray-200 mb-4"></div>
+            <div class="text-sm text-gray-600 mb-4">
+                <p>This map shows all available charging stations. Click on a marker to see details and book a station.</p>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -177,3 +186,116 @@
     window.initialChargeData = <?= json_encode($initialData, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP) ?>;
 </script>
 <script src="/View/shop/chargepoint-filter.js"></script>
+
+<!-- Map initialization script -->
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Initialize map
+        const map = L.map('chargepoints-map').setView([25.2048, 55.2708], 10); // Default to Dubai coordinates
+        
+        // Add OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+        
+        // Create custom marker icons for available and unavailable stations
+        const availableStationIcon = L.divIcon({
+            className: 'custom-div-icon',
+            html: `
+                <div style="background-color: #10B981; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 16px; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
+                    </svg>
+                </div>
+            `,
+            iconSize: [30, 30],
+            iconAnchor: [15, 15],
+            popupAnchor: [0, -15]
+        });
+        
+        const unavailableStationIcon = L.divIcon({
+            className: 'custom-div-icon',
+            html: `
+                <div style="background-color: #EF4444; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 16px; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
+                    </svg>
+                </div>
+            `,
+            iconSize: [30, 30],
+            iconAnchor: [15, 15],
+            popupAnchor: [0, -15]
+        });
+        
+        // Add markers for all charge points
+        const chargePoints = window.initialChargeData.chargePoints;
+        const markers = [];
+        
+        chargePoints.forEach(cp => {
+            if (cp.latitude && cp.longitude) {
+                const marker = L.marker([cp.latitude, cp.longitude], {
+                    icon: cp.availability ? availableStationIcon : unavailableStationIcon
+                }).addTo(map);
+                
+                // Add popup with station info
+                marker.bindPopup(`
+                    <div style="width: 200px;">
+                        <h3 style="font-weight: bold; margin-bottom: 8px;">${cp.address}</h3>
+                        <p style="margin-bottom: 4px;">$${parseFloat(cp.price_per_kWh).toFixed(2)}/kWh</p>
+                        <p style="color: ${cp.availability ? '#10B981' : '#EF4444'}; font-weight: bold;">
+                            ${cp.availability ? 'Available' : 'Unavailable'}
+                        </p>
+                        <p style="margin-bottom: 4px; font-size: 12px;">
+                            Hosted by ${cp.owner_name}
+                        </p>
+                        <a href="index.php?route=chargepoints/details&id=${cp.id}" style="display: inline-block; margin-top: 8px; padding: 4px 8px; background-color: #2563EB; color: white; border-radius: 4px; text-decoration: none;">View Details</a>
+                        ${cp.availability ?
+                        `<a href="index.php?route=booking_form&id=${cp.id}" style="display: inline-block; margin-top: 8px; margin-left: 4px; padding: 4px 8px; background-color: #10B981; color: white; border-radius: 4px; text-decoration: none;">Book Now</a>` :
+                        ''
+                        }
+                    </div>
+                `);
+                
+                markers.push([cp.latitude, cp.longitude]);
+            }
+        });
+        
+        // Adjust map bounds to show all markers if there are charge points
+        if (markers.length > 0) {
+            const bounds = L.latLngBounds(markers);
+            map.fitBounds(bounds, { padding: [50, 50] });
+        }
+        
+        // Add a legend
+        const legend = L.control({ position: 'bottomright' });
+        legend.onAdd = function () {
+            const div = L.DomUtil.create('div', 'info legend');
+            div.style.backgroundColor = 'white';
+            div.style.padding = '6px 8px';
+            div.style.border = '1px solid #ccc';
+            div.style.borderRadius = '4px';
+            div.style.lineHeight = '18px';
+            div.style.color = '#555';
+            
+            div.innerHTML = `
+                <div style="margin-bottom: 4px;"><strong>Legend</strong></div>
+                <div style="display: flex; align-items: center; margin-bottom: 4px;">
+                    <div style="background-color: #10B981; width: 18px; height: 18px; border-radius: 50%; margin-right: 8px;"></div>
+                    <span>Available Stations</span>
+                </div>
+                <div style="display: flex; align-items: center;">
+                    <div style="background-color: #EF4444; width: 18px; height: 18px; border-radius: 50%; margin-right: 8px;"></div>
+                    <span>Unavailable Stations</span>
+                </div>
+            `;
+            
+            return div;
+        };
+        legend.addTo(map);
+        
+        // Make sure map is properly sized
+        setTimeout(() => {
+            map.invalidateSize();
+        }, 100);
+    });
+</script>

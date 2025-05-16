@@ -1,10 +1,15 @@
 <?php
 
 /* ───────────────────────── CONFIG  ───────────────────────── */
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'mvc');
-define('DB_USER', 'admin');
-define('DB_PASSWORD', 'admin');
+//define('DB_HOST', 'localhost');
+//define('DB_NAME', 'mvc');
+//define('DB_USER', 'admin');
+//define('DB_PASSWORD', 'admin');
+//
+define('DB_HOST', '20.126.5.244');
+define('DB_NAME', 'db202201044');
+define('DB_USER', 'u202201044');
+define('DB_PASSWORD', 'u202201044');
 
 
 /* ───────────────────────── AUTOLOAD / REQUIRE ────────────── */

@@ -85,9 +85,9 @@ class BookingModel extends BaseModel
             ->select('b.*, u.name AS user_name, u.email AS user_email, u.phone AS user_phone,
                      cp.address, cp.price_per_kWh, cp.latitude, cp.longitude,
                      o.name AS owner_name, o.email AS owner_email')
-            ->join('Users AS u', 'b.user_id', '=', 'u.id')
+            ->join('users AS u', 'b.user_id', '=', 'u.id')
             ->join('ChargePoints AS cp', 'b.charge_point_id', '=', 'cp.id')
-            ->join('Users AS o', 'cp.owner_id', '=', 'o.id')
+            ->join('users AS o', 'cp.owner_id', '=', 'o.id')
             ->where('b.id', '=', $id)
             ->first();
     }
@@ -251,7 +251,7 @@ class BookingModel extends BaseModel
     {
         return $this->table(self::TABLE . ' AS b')
             ->select('b.*, u.name AS user_name, cp.address, cp.price_per_kWh')
-            ->join('Users AS u', 'b.user_id', '=', 'u.id')
+            ->join('users AS u', 'b.user_id', '=', 'u.id')
             ->join('ChargePoints AS cp', 'b.charge_point_id', '=', 'cp.id')
             ->orderBy('b.booking_date', 'DESC')
             ->limit($limit)
@@ -369,7 +369,7 @@ class BookingModel extends BaseModel
     {
         $query = $this->table(self::TABLE . ' AS b')
             ->select('b.*, u.name AS user_name, cp.address')
-            ->join('Users AS u', 'b.user_id', '=', 'u.id')
+            ->join('users AS u', 'b.user_id', '=', 'u.id')
             ->join('ChargePoints AS cp', 'b.charge_point_id', '=', 'cp.id');
 
         if (!empty($status)) {
@@ -403,7 +403,7 @@ class BookingModel extends BaseModel
     {
         $query = $this->table(self::TABLE . ' AS b')
             ->select('COUNT(b.id) as count')
-            ->join('Users AS u', 'b.user_id', '=', 'u.id')
+            ->join('users AS u', 'b.user_id', '=', 'u.id')
             ->join('ChargePoints AS cp', 'b.charge_point_id', '=', 'cp.id');
 
         if (!empty($status)) {
@@ -451,7 +451,7 @@ class BookingModel extends BaseModel
     {
         return $this->table(self::TABLE . ' AS b')
             ->select('b.*, u.name AS user_name, u.email AS user_email, cp.price_per_kWh')
-            ->join('Users AS u', 'b.user_id', '=', 'u.id')
+            ->join('users AS u', 'b.user_id', '=', 'u.id')
             ->join('ChargePoints AS cp', 'b.charge_point_id', '=', 'cp.id')
             ->where('b.charge_point_id', '=', $chargePointId)
             ->where('b.status', '=', 'Pending')

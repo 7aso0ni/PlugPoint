@@ -117,7 +117,7 @@ class ChargePointModel extends BaseModel
     {
         return $this->table(self::TABLE_NAME . ' AS cp')
             ->select('cp.*, u.name as owner_name')
-            ->join('Users AS u', 'cp.owner_id', '=', 'u.id')
+            ->join('users AS u', 'cp.owner_id', '=', 'u.id')
             ->limit($limit, $offset)
             ->get();
     }
@@ -165,7 +165,7 @@ class ChargePointModel extends BaseModel
     {
         $query = $this->table(self::TABLE_NAME . ' AS cp')
             ->select('cp.*, u.name as owner_name')
-            ->join('Users AS u', 'cp.owner_id', '=', 'u.id');
+            ->join('users AS u', 'cp.owner_id', '=', 'u.id');
 
         // Apply filters
         if (!empty($search)) {
@@ -225,7 +225,7 @@ class ChargePointModel extends BaseModel
     {
         return $this->table(self::TABLE_NAME . ' AS cp')
             ->select('cp.*, u.name as owner_name, u.email as owner_email')
-            ->join('Users AS u', 'cp.owner_id', '=', 'u.id')
+            ->join('users AS u', 'cp.owner_id', '=', 'u.id')
             ->where('cp.id', '=', $id)
             ->first();
     }
@@ -348,7 +348,7 @@ public function deleteCharger($id): void {
     {
         return $this->table(self::TABLE_NAME . ' AS cp')
             ->select('cp.*, u.name as owner_name')
-            ->join('Users AS u', 'cp.owner_id', '=', 'u.id')
+            ->join('users AS u', 'cp.owner_id', '=', 'u.id')
             ->whereOr(function ($q) use ($search) {
                 $q->where('cp.address', 'LIKE', "%$search%")
                     ->where('u.name', 'LIKE', "%$search%");
@@ -372,7 +372,7 @@ public function deleteCharger($id): void {
     {
         $result = $this->table(self::TABLE_NAME . ' AS cp')
             ->select('COUNT(cp.id) as count')
-            ->join('Users AS u', 'cp.owner_id', '=', 'u.id')
+            ->join('users AS u', 'cp.owner_id', '=', 'u.id')
             ->whereOr(function ($q) use ($search) {
                 $q->where('cp.address', 'LIKE', "%$search%")
                     ->where('u.name', 'LIKE', "%$search%");
@@ -448,7 +448,7 @@ public function deleteCharger($id): void {
         // 1. First, get all charge points
         $allPoints = $this->table(self::TABLE_NAME . ' AS cp')
             ->select('cp.*, u.name as owner_name')
-            ->join('Users AS u', 'cp.owner_id', '=', 'u.id')
+            ->join('users AS u', 'cp.owner_id', '=', 'u.id')
             ->get();
 
         // 2. Calculate distance for each and filter

@@ -145,7 +145,7 @@ switch ($route) {
         $controller = new Controller\ChargePointController();
         $controller->myChargers();
         break;
-    case 'edit_charger':
+    case 'homeowner/edit_charger':
         (new \Controller\ChargePointController())->editCharger();
         break;
 

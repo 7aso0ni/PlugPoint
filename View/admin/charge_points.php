@@ -298,7 +298,7 @@
                         Edit Charging Station
                     </h3>
                     <div class="mt-4">
-                        <form id="editForm" action="index.php?route=admin/update_charge_point" method="POST" enctype="multipart/form-data">
+                        <form id="editForm" action="index.php?route=admin/charge_point_update" method="POST" enctype="multipart/form-data">
                             <input type="hidden" name="cp_id" id="edit_cp_id">
                             <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-2">
                                 <div class="sm:col-span-2">

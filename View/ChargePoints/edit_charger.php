@@ -7,7 +7,7 @@
         </div>
     <?php endif; ?>
 
-<form method="POST" action="index.php?route=edit_charger&id=<?= $charger['id'] ?>" enctype="multipart/form-data">
+<form method="POST" action="index.php?route=homeowner/edit_charger&id=<?= $charger['id'] ?>" enctype="multipart/form-data">
         <input type="hidden" name="id" value="<?= $charger['id'] ?>">
 
         <div class="mb-4">

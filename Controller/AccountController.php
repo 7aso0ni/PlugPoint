@@ -41,7 +41,7 @@ class AccountController extends BaseController
     public function updateUser()
     {
         // Check if user is logged in
-        if ($this->isLoggedIn()) {
+        if (!$this->isLoggedIn()) {
             header('Location: index.php?route=login');
             exit();
         }

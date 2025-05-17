@@ -21,9 +21,6 @@
         <?php unset($_SESSION['success']); ?>
     <?php endif; ?>
 
-    <!-- Map Selection Instructions -->
-
-
     <!-- Map Selection -->
     <div id="map-container">
         <div class="mb-4">

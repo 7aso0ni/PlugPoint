@@ -2,12 +2,12 @@
 
 namespace Controller;
 
-use BaseController;
+require_once 'Controller/BaseController.php';
 use Model\UserModel;
 use Model\ChargePointModel;
 use Model\BookingModel;
 
-class AdminController extends BaseController
+class AdminController extends \BaseController
 {
     private $userModel;
     private $chargePointModel;
@@ -15,14 +15,11 @@ class AdminController extends BaseController
 
     public function __construct()
     {
+        parent::__construct();
+
         $this->userModel = new UserModel();
         $this->chargePointModel = new ChargePointModel();
         $this->bookingModel = new BookingModel();
-
-        // Make sure session is started
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
     }
 
     /**
@@ -364,6 +361,26 @@ class AdminController extends BaseController
     }
 
     /**
+     * Show add charge point form with map
+     */
+    public function showAddChargePoint()
+    {
+        // Check if user is admin, redirect if not
+        $this->checkAdminAccess();
+
+        $title = "Add New Charging Station";
+
+        // Get all owners for dropdown
+        $owners = $this->userModel->getAllUsers();
+
+        ob_start();
+        require 'View/admin/add_charge_point.php';
+        $content = ob_get_clean();
+
+        require 'View/layouts/admin.php';
+    }
+
+    /**
      * Add charge point action
      */
     public function addChargePoint()
@@ -531,9 +548,24 @@ class AdminController extends BaseController
     private function uploadImage($file)
     {
         $targetDir = "uploads/";
+        if (!is_dir($targetDir)) {
+            mkdir($targetDir, 0755, true);
+        }
+
         $fileName = basename($file["name"]);
         $targetFilePath = $targetDir . time() . '_' . $fileName; // Add timestamp to prevent duplicates
         $fileType = pathinfo($targetFilePath, PATHINFO_EXTENSION);
+
+        // Check if image file is a actual image or fake image
+        $check = getimagesize($file["tmp_name"]);
+        if ($check === false) {
+            return false;
+        }
+
+        // Check file size
+        if ($file["size"] > 5000000) { // 5MB max
+            return false;
+        }
 
         // Allow certain file formats
         $allowTypes = array('jpg', 'jpeg', 'png', 'gif');
@@ -571,5 +603,16 @@ class AdminController extends BaseController
         $content = ob_get_clean();
 
         require 'View/layouts/admin.php';
+    }
+
+    /**
+     * Helper method to check if user is admin
+     */
+    protected function checkAdminAccess()
+    {
+        if (!isset($_SESSION['user']) || ($_SESSION['user']['role_id'] ?? 0) !== 1) {
+            $this->setMessage('error', 'Unauthorized access. Admin privileges required.');
+            $this->redirect('home');
+        }
     }
 }

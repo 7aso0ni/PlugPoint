@@ -46,6 +46,27 @@ class UserModel extends BaseModel
 
         return $query->get();
     }
+    
+    /**
+     * Get users by role ID
+     * 
+     * @param int $roleId The role ID to filter by
+     * @param int|null $limit Optional limit for pagination
+     * @param int $offset Optional offset for pagination
+     * @return array Array of users with the specified role
+     */
+    public function getUsersByRole(int $roleId, $limit = null, $offset = 0): array
+    {
+        $query = $this->table(self::TABLE_NAME)
+            ->select()
+            ->where('role_id', '=', $roleId);
+
+        if ($limit !== null) {
+            $query->limit($limit, $offset);
+        }
+
+        return $query->get();
+    }
 
     /**
      * Get user by ID

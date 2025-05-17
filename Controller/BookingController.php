@@ -65,7 +65,7 @@ class BookingController extends BaseController
             $this->redirect('chargepoints/details&id=' . $cpId);
             return;
         }
-        
+
         // Check if the user is the owner of the charge point
         if ($cp['owner_id'] == $_SESSION['user']['id']) {
             $error = "You cannot book your own charging station";
@@ -363,11 +363,12 @@ class BookingController extends BaseController
 
         require 'View/layouts/main.php';
     }
-    
+
     /**
      * Approve a booking request (for charger owners)
      */
-    public function ApproveBooking() {
+    public function ApproveBooking()
+    {
         if (!$this->isLoggedIn()) {
             $this->redirect('login');
             return;
@@ -389,7 +390,7 @@ class BookingController extends BaseController
             $this->redirect('homeowner/my_chargers');
             return;
         }
-        
+
         // Get the charge point to verify ownership
         $chargePoint = $this->chargePointModel->getChargePointById($booking['charge_point_id']);
         if (!$chargePoint || $chargePoint['owner_id'] != $userId) {
@@ -407,20 +408,21 @@ class BookingController extends BaseController
 
         // Update booking status to Approved
         $result = $this->bookingModel->updateBookingStatus($bookingId, 'Approved');
-        
+
         if ($result) {
             $this->setMessage('success', 'Booking request approved successfully');
         } else {
             $this->setMessage('error', 'Failed to approve booking. Please try again.');
         }
-        
+
         $this->redirect('homeowner/my_chargers');
     }
-    
+
     /**
      * Decline a booking request (for charger owners)
      */
-    public function DeclineBooking() {
+    public function DeclineBooking()
+    {
         if (!$this->isLoggedIn()) {
             $this->redirect('login');
             return;
@@ -442,7 +444,7 @@ class BookingController extends BaseController
             $this->redirect('homeowner/my_chargers');
             return;
         }
-        
+
         // Get the charge point to verify ownership
         $chargePoint = $this->chargePointModel->getChargePointById($booking['charge_point_id']);
         if (!$chargePoint || $chargePoint['owner_id'] != $userId) {
@@ -460,13 +462,13 @@ class BookingController extends BaseController
 
         // Update booking status to Declined
         $result = $this->bookingModel->updateBookingStatus($bookingId, 'Declined');
-        
+
         if ($result) {
             $this->setMessage('success', 'Booking request declined successfully');
         } else {
             $this->setMessage('error', 'Failed to decline booking. Please try again.');
         }
-        
+
         $this->redirect('homeowner/my_chargers');
     }
 }

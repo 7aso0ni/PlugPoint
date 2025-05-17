@@ -111,7 +111,10 @@ switch ($route) {
     case 'admin/charge_points':
         $admin->chargePoints();
         break;
-    case 'admin/charge_point_add':  // Changed to match the controller methods
+    case 'admin/add_charge_point_form':
+        $admin->showAddChargePoint();
+        break;
+    case 'admin/add_charge_point':  // Changed to match the controller methods
         $admin->addChargePoint();
         break;
     case 'admin/charge_point_update':  // Changed to match the controller methods
@@ -133,27 +136,23 @@ switch ($route) {
         $admin->reports();
         break;
     case 'homeowner/add_charger':
-    $chargers->addCharger();
-    break;
-case 'homeowner/save_charger':
-    $chargers->saveCharger();
-    break;
-case 'homeowner/my_chargers':
-    $controller = new Controller\ChargePointController();
-    $controller->myChargers();
-    break;
-case 'edit_charger':
+        $chargers->addCharger();
+        break;
+    case 'homeowner/save_charger':
+        $chargers->saveCharger();
+        break;
+    case 'homeowner/my_chargers':
+        $controller = new Controller\ChargePointController();
+        $controller->myChargers();
+        break;
+    case 'edit_charger':
         (new \Controller\ChargePointController())->editCharger();
         break;
 
-case 'delete_charger':
-    $controller = new Controller\ChargePointController();
-    $controller->deleteCharger(); // handles $_POST['id']
-    break;
-
-
-
-
+    case 'delete_charger':
+        $controller = new Controller\ChargePointController();
+        $controller->deleteCharger(); // handles $_POST['id']
+        break;
     case 'home':
     default:
         $home->index();

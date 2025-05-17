@@ -149,7 +149,7 @@ switch ($route) {
         (new \Controller\ChargePointController())->editCharger();
         break;
 
-    case 'delete_charger':
+    case 'homeowner/delete_charger':
         $controller = new Controller\ChargePointController();
         $controller->deleteCharger(); // handles $_POST['id']
         break;

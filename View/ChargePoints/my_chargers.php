@@ -57,11 +57,11 @@
                         </div>
                         
                         <div class="flex space-x-3">
-                            <a href="index.php?route=edit_charger&id=<?= $cp['id'] ?>"
+                            <a href="index.php?route=homeowner/edit_charger&id=<?= $cp['id'] ?>"
                                class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 flex items-center">
                                 <i class="fas fa-edit mr-2"></i> Edit
                             </a>
-                            <form method="POST" action="index.php?route=delete_charger">
+                            <form method="POST" action="index.php?route=homeowner/delete_charger">
                                 <input type="hidden" name="id" value="<?= $cp['id'] ?>">
                                 <button type="submit"
                                         class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 flex items-center"

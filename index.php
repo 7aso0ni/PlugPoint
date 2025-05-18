@@ -1,11 +1,6 @@
 <?php
 
 /* ───────────────────────── CONFIG  ───────────────────────── */
-//define('DB_HOST', 'localhost');
-//define('DB_NAME', 'mvc');
-//define('DB_USER', 'admin');
-//define('DB_PASSWORD', 'admin');
-//
 ini_set('display_errors', 1); // temporarily enable for browser
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
@@ -113,7 +108,7 @@ switch ($route) {
     case 'api/nearby_stations':
         $api->nearbyStations();
         break;
-    case 'api/users': // Add this new API route for user search
+    case 'api/users':
         $api->users();
         break;
 
@@ -124,13 +119,13 @@ switch ($route) {
     case 'admin/users':
         $admin->users();
         break;
-    case 'admin/user_add':  // Changed to match the controller methods
+    case 'admin/user_add':
         $admin->addUser();
         break;
-    case 'admin/user_update':  // Changed to match the controller methods
+    case 'admin/user_update':
         $admin->updateUser();
         break;
-    case 'admin/user_delete':  // Changed to match the controller methods
+    case 'admin/user_delete':
         $admin->deleteUser();
         break;
     case 'admin/charge_points':
@@ -139,13 +134,13 @@ switch ($route) {
     case 'admin/add_charge_point_form':
         $admin->showAddChargePoint();
         break;
-    case 'admin/add_charge_point':  // Changed to match the controller methods
+    case 'admin/add_charge_point':
         $admin->addChargePoint();
         break;
-    case 'admin/charge_point_update':  // Changed to match the controller methods
+    case 'admin/charge_point_update':
         $admin->updateChargePoint();
         break;
-    case 'admin/charge_point_delete':  // Changed to match the controller methods
+    case 'admin/charge_point_delete':
         $admin->deleteChargePoint();
         break;
     case 'admin/bookings':

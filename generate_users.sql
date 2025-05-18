@@ -1,3 +1,6 @@
+USE db202201044;
+
+
 DELIMITER //
 
 CREATE PROCEDURE generate_1000_users()

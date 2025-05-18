@@ -259,15 +259,26 @@ class ChargePointController extends \Controller\BaseController
             $image_path = null;
             if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
                 $target_dir = "uploads/";
+                
+                // Create directory if it doesn't exist with proper permissions
                 if (!is_dir($target_dir)) {
-                    mkdir($target_dir, 0755, true);
+                    if (!mkdir($target_dir, 0777, true)) {
+                        error_log("Failed to create directory: " . $target_dir);
+                        $_SESSION['errors'] = ["Failed to create upload directory"];
+                        header('Location: index.php?route=homeowner/add_charger');
+                        exit();
+                    }
+                    chmod($target_dir, 0777); // Ensure directory is writable
                 }
 
+                // Get file extension
+                $file_name = basename($_FILES['image']['name']);
+                $file_ext = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
+                
                 // Validate file type
-                $allowed_types = ['image/jpeg', 'image/png', 'image/gif'];
-                $file_type = $_FILES['image']['type'];
-
-                if (!in_array($file_type, $allowed_types)) {
+                $allowed_exts = ['jpg', 'jpeg', 'png', 'gif'];
+                if (!in_array($file_ext, $allowed_exts)) {
+                    error_log("Invalid file type: " . $file_ext);
                     $_SESSION['errors'] = ["Only JPG, PNG and GIF images are allowed"];
                     header('Location: index.php?route=homeowner/add_charger');
                     exit();
@@ -275,17 +286,31 @@ class ChargePointController extends \Controller\BaseController
 
                 // Validate file size (max 5MB)
                 if ($_FILES['image']['size'] > 5 * 1024 * 1024) {
+                    error_log("File too large: " . $_FILES['image']['size']);
                     $_SESSION['errors'] = ["Image size should not exceed 5MB"];
                     header('Location: index.php?route=homeowner/add_charger');
                     exit();
                 }
+                
+                // Validate file is an actual image
+                $image_info = @getimagesize($_FILES['image']['tmp_name']);
+                if (!$image_info) {
+                    error_log("Not a valid image file");
+                    $_SESSION['errors'] = ["Not a valid image file"];
+                    header('Location: index.php?route=homeowner/add_charger');
+                    exit();
+                }
 
-                $filename = uniqid() . '_' . basename($_FILES["image"]["name"]);
-                $target_file = $target_dir . $filename;
+                // Generate unique filename
+                $unique_name = time() . '_' . uniqid() . '.' . $file_ext;
+                $target_file = $target_dir . $unique_name;
 
                 if (move_uploaded_file($_FILES["image"]["tmp_name"], $target_file)) {
                     $image_path = $target_file;
+                    chmod($target_file, 0644); // Make file readable
+                    error_log("Image uploaded successfully to: " . $target_file);
                 } else {
+                    error_log("Failed to move uploaded file from {$_FILES['image']['tmp_name']} to {$target_file}");
                     $_SESSION['errors'] = ["Failed to upload image"];
                     header('Location: index.php?route=homeowner/add_charger');
                     exit();
@@ -387,15 +412,61 @@ class ChargePointController extends \Controller\BaseController
             $image_url = $charger['image_url'];
             if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
                 $target_dir = "uploads/";
+                
+                // Create directory if it doesn't exist with proper permissions
                 if (!is_dir($target_dir)) {
-                    mkdir($target_dir, 0755, true);
+                    if (!mkdir($target_dir, 0777, true)) {
+                        error_log("Failed to create directory: " . $target_dir);
+                        $_SESSION['errors'] = ["Failed to create upload directory"];
+                        header('Location: index.php?route=homeowner/edit_charger?id=' . $id);
+                        exit();
+                    }
+                    chmod($target_dir, 0777); // Ensure directory is writable
                 }
 
-                $filename = uniqid() . '_' . basename($_FILES["image"]["name"]);
-                $target_file = $target_dir . $filename;
+                // Get file extension
+                $file_name = basename($_FILES['image']['name']);
+                $file_ext = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
+                
+                // Validate file type
+                $allowed_exts = ['jpg', 'jpeg', 'png', 'gif'];
+                if (!in_array($file_ext, $allowed_exts)) {
+                    error_log("Invalid file type: " . $file_ext);
+                    $_SESSION['errors'] = ["Only JPG, PNG and GIF images are allowed"];
+                    header('Location: index.php?route=homeowner/edit_charger?id=' . $id);
+                    exit();
+                }
+
+                // Validate file size (max 5MB)
+                if ($_FILES['image']['size'] > 5 * 1024 * 1024) {
+                    error_log("File too large: " . $_FILES['image']['size']);
+                    $_SESSION['errors'] = ["Image size should not exceed 5MB"];
+                    header('Location: index.php?route=homeowner/edit_charger?id=' . $id);
+                    exit();
+                }
+                
+                // Validate file is an actual image
+                $image_info = @getimagesize($_FILES['image']['tmp_name']);
+                if (!$image_info) {
+                    error_log("Not a valid image file");
+                    $_SESSION['errors'] = ["Not a valid image file"];
+                    header('Location: index.php?route=homeowner/edit_charger?id=' . $id);
+                    exit();
+                }
+
+                // Generate unique filename
+                $unique_name = time() . '_' . uniqid() . '.' . $file_ext;
+                $target_file = $target_dir . $unique_name;
 
                 if (move_uploaded_file($_FILES["image"]["tmp_name"], $target_file)) {
                     $image_url = $target_file;
+                    chmod($target_file, 0644); // Make file readable
+                    error_log("Image uploaded successfully to: " . $target_file);
+                } else {
+                    error_log("Failed to move uploaded file from {$_FILES['image']['tmp_name']} to {$target_file}");
+                    $_SESSION['errors'] = ["Failed to upload image"];
+                    header('Location: index.php?route=homeowner/edit_charger?id=' . $id);
+                    exit();
                 }
             }
 

@@ -560,7 +560,8 @@ class AdminController extends BaseController
     private function uploadImage($file)
     {
         // Basic validation
-        if (!isset($file['tmp_name']) || !isset($file['name'])) {
+        if (!isset($file['tmp_name']) || !isset($file['name']) || $file['error'] !== UPLOAD_ERR_OK) {
+            error_log("Upload validation failed: " . json_encode($file));
             return false;
         }
 
@@ -568,11 +569,13 @@ class AdminController extends BaseController
         $fileName = basename($file['name']);
         $targetDir = "uploads/";
 
-        // Create directory if it doesn't exist
+        // Create directory if it doesn't exist with proper permissions
         if (!is_dir($targetDir)) {
             if (!mkdir($targetDir, 0777, true)) {
+                error_log("Failed to create directory: " . $targetDir);
                 return false;
             }
+            chmod($targetDir, 0777); // Ensure directory is writable
         }
 
         // Generate unique filename
@@ -583,28 +586,34 @@ class AdminController extends BaseController
         // Validate file type
         $allowedTypes = ['jpg', 'jpeg', 'png', 'gif'];
         if (!in_array($fileExt, $allowedTypes)) {
+            error_log("Invalid file type: " . $fileExt);
             return false;
         }
 
         // Validate file size
         $maxSize = 5 * 1024 * 1024; // 5MB
         if ($file['size'] > $maxSize) {
+            error_log("File too large: " . $file['size']);
             return false;
         }
 
         // Validate file is an actual image
-        if (!getimagesize($file['tmp_name'])) {
+        $imageInfo = @getimagesize($file['tmp_name']);
+        if (!$imageInfo) {
+            error_log("Not a valid image file");
             return false;
         }
 
         // Move uploaded file
         if (!move_uploaded_file($file['tmp_name'], $targetFilePath)) {
+            error_log("Failed to move uploaded file from {$file['tmp_name']} to {$targetFilePath}");
             return false;
         }
 
         // Make file readable
         chmod($targetFilePath, 0644);
-
+        
+        error_log("Image uploaded successfully to: " . $targetFilePath);
         return $targetFilePath;
     }
 

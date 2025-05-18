@@ -36,7 +36,7 @@ class BaseController
      */
     protected function redirect($route)
     {
-        header("Location: /PlugPoint/index.php?route=" . $route);
+        header("Location: index.php?route=" . $route);
         exit();
     }
 

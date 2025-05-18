@@ -77,7 +77,7 @@ class AuthController
                 setcookie("loggedIn", true, time() + (86400 * 30), "/");
 
                 // if successful redirect to home
-                header("Location: /PlugPoint/index.php?route=home");
+                header("Location: index.php?route=home");
                 exit(); // Added exit after redirect
             }
         }
@@ -127,10 +127,10 @@ class AuthController
 
                     if ($user['role_id'] == 1) {
                         // Redirect admin users to the admin dashboard
-                        header("Location: /PlugPoint/index.php?route=admin/dashboard");
+                        header("Location: index.php?route=admin/dashboard");
                     } else {
                         // Redirect regular users to the home page
-                        header("Location: /PlugPoint/index.php?route=home");
+                        header("Location: index.php?route=home");
                     }
                     exit(); // Added exit after redirect
                 }
@@ -159,7 +159,7 @@ class AuthController
             setcookie("email", "", time() - 3600, "/");
             setcookie("phone", "", time() - 3600, "/");
 
-            header("Location: /PlugPoint/index.php?route=login");
+            header("Location: index.php?route=login");
             exit(); // Added exit after redirect
         }
     }

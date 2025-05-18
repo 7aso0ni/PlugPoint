@@ -218,4 +218,4 @@
 </script>
 
 <!-- Include booking calendar JS -->
-<script src="/View/booking/booking-calender.js"></script>
+<script src="View/booking/booking-calender.js"></script>

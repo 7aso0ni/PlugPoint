@@ -95,6 +95,13 @@
                     </div>
                 </div>
 
+                <div class="flex items-center mb-4">
+                    <input type="checkbox" id="not-robot" name="not-robot" class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded" required>
+                    <label for="not-robot" class="ml-2 block text-sm text-gray-700">
+                        I'm not a robot
+                    </label>
+                </div>
+
                 <div>
                     <button type="submit"
                             id="create-acc"

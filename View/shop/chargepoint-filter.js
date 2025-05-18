@@ -66,20 +66,21 @@ document.addEventListener('DOMContentLoaded', function() {
     function resetFilters() {
         // Reset UI
         searchInput.value = '';
-        priceRangeInput.value = 0.50;
-        availabilitySelect.value = '';
+        priceRangeInput.value = 1.00; // Set to maximum price to show all
+        availabilitySelect.value = ''; // All stations
         updatePriceLabel();
 
-        // Reset state
+        // Reset state to show ALL stations without any filters
         currentState = {
             search: '',
-            maxPrice: 0.50,
-            available: '',
+            maxPrice: 999999.0, // Very high max price to include all
+            available: '', // Empty string to show all stations
             page: 1,
             totalPages: window.initialChargeData.pagination.total_pages || 1
         };
 
-        loadChargePoints();
+        // Force a full reload of all stations
+        loadChargePoints(true); // Pass true to force full reload
     }
 
     function goToPrevPage() {
@@ -157,7 +158,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function loadChargePoints() {
+    function loadChargePoints(forceReload = false) {
         // Show loading indicator
         loadingIndicator.classList.remove('hidden');
         chargepointsContainer.classList.add('opacity-50');
@@ -172,8 +173,17 @@ document.addEventListener('DOMContentLoaded', function() {
         formData.append('available', currentState.available);
         formData.append('page', currentState.page);
 
+        // Debug the search parameters
+        console.log('Search parameters:', {
+            search: currentState.search,
+            maxPrice: currentState.maxPrice,
+            available: currentState.available,
+            page: currentState.page,
+            forceReload: forceReload
+        });
+
         // Fetch data
-        fetch('index.php?route=chargepoints/filter', {
+        fetch(`index.php?route=chargepoints/filter&force_reload=${forceReload ? 1 : 0}`, {
             method: 'POST',
             body: formData
         })

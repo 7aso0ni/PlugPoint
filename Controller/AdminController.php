@@ -547,36 +547,51 @@ class AdminController extends \BaseController
      */
     private function uploadImage($file)
     {
+        // Basic validation
+        if (!isset($file['tmp_name']) || !isset($file['name'])) {
+            return false;
+        }
+
+        // Get file info
+        $fileName = basename($file['name']);
         $targetDir = "uploads/";
+        
+        // Create directory if it doesn't exist
         if (!is_dir($targetDir)) {
-            mkdir($targetDir, 0755, true);
+            if (!mkdir($targetDir, 0777, true)) {
+                return false;
+            }
         }
 
-        $fileName = basename($file["name"]);
-        $targetFilePath = $targetDir . time() . '_' . $fileName; // Add timestamp to prevent duplicates
-        $fileType = pathinfo($targetFilePath, PATHINFO_EXTENSION);
+        // Generate unique filename
+        $fileExt = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+        $uniqueName = time() . '_' . uniqid() . '.' . $fileExt;
+        $targetFilePath = $targetDir . $uniqueName;
 
-        // Check if image file is a actual image or fake image
-        $check = getimagesize($file["tmp_name"]);
-        if ($check === false) {
+        // Validate file type
+        $allowedTypes = ['jpg', 'jpeg', 'png', 'gif'];
+        if (!in_array($fileExt, $allowedTypes)) {
             return false;
         }
 
-        // Check file size
-        if ($file["size"] > 5000000) { // 5MB max
+        // Validate file size
+        $maxSize = 5 * 1024 * 1024; // 5MB
+        if ($file['size'] > $maxSize) {
             return false;
         }
 
-        // Allow certain file formats
-        $allowTypes = array('jpg', 'jpeg', 'png', 'gif');
-        if (!in_array(strtolower($fileType), $allowTypes)) {
+        // Validate file is an actual image
+        if (!getimagesize($file['tmp_name'])) {
             return false;
         }
 
-        // Upload file
-        if (!move_uploaded_file($file["tmp_name"], $targetFilePath)) {
+        // Move uploaded file
+        if (!move_uploaded_file($file['tmp_name'], $targetFilePath)) {
             return false;
         }
+
+        // Make file readable
+        chmod($targetFilePath, 0644);
 
         return $targetFilePath;
     }

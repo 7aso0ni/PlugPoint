@@ -33,6 +33,13 @@
                     </div>
                 </div>
 
+                <div class="flex items-center mb-4">
+                    <input type="checkbox" id="not-robot" name="not-robot" class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded" required>
+                    <label for="not-robot" class="ml-2 block text-sm text-gray-700">
+                        I'm not a robot
+                    </label>
+                </div>
+
                 <div>
                     <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 rounded-lg transition duration-200">
                         Log In

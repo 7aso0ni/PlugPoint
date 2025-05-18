@@ -76,6 +76,8 @@ class ChargePointController extends BaseController {
 //        require 'View/layouts/main.php';
 //    }
     public function index() {
+
+        
         $title = 'EV Charging Stations';
 
         // Fetch all charge points without filtering by price, availability, or pagination
@@ -112,26 +114,42 @@ class ChargePointController extends BaseController {
     /* ─────────────────────────────────────────────────────────── */
 
     public function filter() {
+        // Get parameters from both POST and GET
         $search = $_POST['search'] ?? '';
         $maxPrice = (float) ($_POST['max_price'] ?? 0.50);
         $available = $_POST['available'] !== '' ? (int) $_POST['available'] : null;
         $page = (int) ($_POST['page'] ?? 1);
         $perPage = 8;
         $offset = ($page - 1) * $perPage;
+        $forceReload = isset($_GET['force_reload']) && $_GET['force_reload'] == 1;
 
-        $chargePoints = $this->chargePointModel->getFilteredChargePoints(
+        // If force reload is requested, show all stations without pagination
+        if ($forceReload) {
+            $chargePoints = $this->chargePointModel->getFilteredChargePoints(
+                $search,
+                $maxPrice,
+                null, // Show all stations
+                1000, // Large limit to show all
+                0
+            );
+            $totalCount = count($chargePoints);
+            $totalPages = 1;
+        } else {
+            $chargePoints = $this->chargePointModel->getFilteredChargePoints(
                 $search,
                 $maxPrice,
                 $available,
                 $perPage,
                 $offset
-        );
-        $totalCount = $this->chargePointModel->getFilteredChargePointsCount(
+            );
+            $totalCount = $this->chargePointModel->getFilteredChargePointsCount(
                 $search,
                 $maxPrice,
                 $available
-        );
-        $totalPages = (int) ceil($totalCount / $perPage);
+            );
+            $totalPages = (int) ceil($totalCount / $perPage);
+        }
+        // The totalCount and totalPages are already set in the if/else block above
 
         header('Content-Type: application/json');
         echo json_encode([
@@ -219,7 +237,9 @@ class ChargePointController extends BaseController {
             // Check if user has permission to add chargers (must be a charger owner)
             if (!isset($_SESSION['user']['role_id']) || $_SESSION['user']['role_id'] != 2) {
                 $errors[] = "You don't have permission to add chargers";
-                header('Location: index.php?route=home');
+                // Keep user on the add charger page with error message
+                $_SESSION['errors'] = $errors;
+                header('Location: index.php?route=homeowner/add_charger');
                 exit();
             }
             

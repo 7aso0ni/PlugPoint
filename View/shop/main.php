@@ -39,8 +39,8 @@
                     <select id="availability"
                         class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500">
                         <option value="">All Stations</option>
-                        <option value="1">Available Only</option>
-                        <option value="0">Show All</option>
+                        <option value="1">Available Now</option>
+                        <option value="0">Currently Unavailable</option>
                     </select>
                 </div>
             </div>
@@ -185,7 +185,7 @@
 <script>
     window.initialChargeData = <?= json_encode($initialData, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP) ?>;
 </script>
-<script src="/View/shop/chargepoint-filter.js"></script>
+<script src="View/shop/chargepoint-filter.js"></script>
 
 <!-- Map initialization script -->
 <script>

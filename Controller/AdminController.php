@@ -6,6 +6,9 @@ use Model\UserModel;
 use Model\ChargePointModel;
 use Model\BookingModel;
 
+require_once 'Controller/BaseController.php';
+
+
 class AdminController extends BaseController
 {
     private $userModel;

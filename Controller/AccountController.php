@@ -2,10 +2,7 @@
 
 namespace Controller;
 
-use \BaseController;
 use \Model\UserModel;
-
-require_once 'BaseController.php';
 
 class AccountController extends BaseController
 {

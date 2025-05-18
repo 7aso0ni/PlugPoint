@@ -256,8 +256,8 @@ class ChargePointController extends \Controller\BaseController
             }
 
             // Handle optional image upload
-            $image_path = null;
-            if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+            $image_path = 'images/chargepoint-default.jpg'; // Default image path
+            if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK && !empty($_FILES['image']['name'])) {
                 $target_dir = "uploads/";
                 
                 // Create directory if it doesn't exist with proper permissions
@@ -316,6 +316,9 @@ class ChargePointController extends \Controller\BaseController
                     exit();
                 }
             }
+            
+            // Debug log the image path
+            error_log("Image path being saved to database: " . $image_path);
 
             try {
                 $db = new \PDO('mysql:host=' . DB_HOST . ';dbname=' . DB_NAME, DB_USER, DB_PASSWORD);
@@ -409,8 +412,8 @@ class ChargePointController extends \Controller\BaseController
             $availability = isset($_POST['availability']) ? (int) $_POST['availability'] : 0;
 
             // Handle image upload if a new file is provided
-            $image_url = $charger['image_url'];
-            if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+            $image_url = $charger['image_url'] ?: 'images/chargepoint-default.jpg'; // Use existing or default
+            if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK && !empty($_FILES['image']['name'])) {
                 $target_dir = "uploads/";
                 
                 // Create directory if it doesn't exist with proper permissions
@@ -469,6 +472,9 @@ class ChargePointController extends \Controller\BaseController
                     exit();
                 }
             }
+            
+            // Debug log the image path
+            error_log("Image path being saved to database in edit: " . $image_url);
 
             // Update charger
             $this->chargePointModel->updateCharger($id, $address, $price, $availability, $image_url);

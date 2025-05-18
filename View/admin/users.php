@@ -418,4 +418,4 @@
 </script>
 
 <!-- Include the AJAX user search script -->
-<script src="/View/admin/user-search.js"></script>
+<script src="View/admin/user-search.js"></script>

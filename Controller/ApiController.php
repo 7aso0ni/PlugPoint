@@ -66,8 +66,16 @@ class ApiController extends BaseController
      */
     public function users()
     {
-        // Check if user is admin
-        $this->checkAdminAccess();
+        // Check if user is admin (without redirect for API)
+        if (!isset($_SESSION['user']) || (int) ($_SESSION['user']['role_id'] ?? 0) !== 1) {
+            // Return JSON error instead of redirecting
+            http_response_code(403);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Access denied. You do not have admin privileges.'
+            ]);
+            exit;
+        }
 
         // Set content type to JSON
         header('Content-Type: application/json');

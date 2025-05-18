@@ -15,9 +15,9 @@ use Model\BookingModel;
 
 class ChargePointController extends BaseController {
 
-    private ChargePointModel $chargePointModel;
-    private UserModel $userModel;
-    private BookingModel $bookingModel;
+    private $chargePointModel;
+    private $userModel;
+    private $bookingModel;
 
     public function __construct() {
         $this->chargePointModel = new ChargePointModel();

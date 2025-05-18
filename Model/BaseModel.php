@@ -28,19 +28,30 @@ class BaseModel
     /**
      * @var PDO Database connection instance
      */
-    protected PDO $db;
+    /**
+     * @var PDO Database connection instance
+     */
+    protected $db;
     
     /**
      * @var ?PDO Singleton PDO instance
      */
-    private static ?PDO $pdo = null;
+    /**
+     * @var PDO|null Singleton PDO instance
+     */
+    private static $pdo = null;
 
     /**
      * Establishes a database connection (singleton pattern)
      *
      * @return ?PDO Database connection or null on failure
      */
-    private static function connect(): ?PDO
+    /**
+     * Establishes a database connection (singleton pattern)
+     *
+     * @return PDO|null Database connection or null on failure
+     */
+    private static function connect()
     {
         if (self::$pdo === null) {
             try {
@@ -72,52 +83,82 @@ class BaseModel
     /**
      * @var string Base SQL query (SELECT/INSERT/UPDATE/DELETE)
      */
-    private string $queryBase = '';
+    /**
+     * @var string Base SQL query (SELECT/INSERT/UPDATE/DELETE)
+     */
+    private $queryBase = '';
     
     /**
      * @var string WHERE clause of the SQL query
      */
-    private string $whereClause = '';
+    /**
+     * @var string WHERE clause of the SQL query
+     */
+    private $whereClause = '';
     
     /**
      * @var array Parameters for the WHERE clause
      */
-    private array $whereParams = [];
+    /**
+     * @var array Parameters for the WHERE clause
+     */
+    private $whereParams = [];
     
     /**
      * @var string GROUP BY clause of the SQL query
      */
-    private string $groupByClause = '';
+    /**
+     * @var string GROUP BY clause of the SQL query
+     */
+    private $groupByClause = '';
     
     /**
      * @var string HAVING clause of the SQL query
      */
-    private string $havingClause = '';
+    /**
+     * @var string HAVING clause of the SQL query
+     */
+    private $havingClause = '';
     
     /**
      * @var string ORDER BY clause of the SQL query
      */
-    private string $orderByClause = '';
+    /**
+     * @var string ORDER BY clause of the SQL query
+     */
+    private $orderByClause = '';
     
     /**
      * @var ?int Maximum number of rows to return
      */
-    private ?int $limit = null;
+    /**
+     * @var int|null Maximum number of rows to return
+     */
+    private $limit = null;
     
     /**
      * @var int Number of rows to skip
      */
-    private int $offset = 0;
+    /**
+     * @var int Number of rows to skip
+     */
+    private $offset = 0;
     
     /**
      * @var array Parameters for INSERT/UPDATE operations
      */
-    private array $params = [];
+    /**
+     * @var array Parameters for INSERT/UPDATE operations
+     */
+    private $params = [];
     
     /**
      * @var string Current table name
      */
-    private string $table = '';
+    /**
+     * @var string Current table name
+     */
+    private $table = '';
 
     /* ───── Core builder methods ───── */
     /**
@@ -126,7 +167,13 @@ class BaseModel
      * @param string $table Table name
      * @return self For method chaining
      */
-    public function table(string $table): self
+    /**
+     * Sets the table to query
+     *
+     * @param string $table Table name
+     * @return self For method chaining
+     */
+    public function table($table)
     {
         $this->table = $table;
         return $this;
@@ -138,7 +185,13 @@ class BaseModel
      * @param string|array $columns Columns to select (string or array of column names)
      * @return self For method chaining
      */
-    public function select($columns = '*'): self
+    /**
+     * Begins a SELECT query
+     *
+     * @param string|array $columns Columns to select
+     * @return self For method chaining
+     */
+    public function select($columns = '*')
     {
         $cols = is_array($columns) ? implode(', ', $columns) : $columns;
         $this->queryBase = "SELECT $cols FROM {$this->table}";
@@ -154,7 +207,16 @@ class BaseModel
      * @param string $second Second column for join condition
      * @return self For method chaining
      */
-    public function join(string $table, string $first, string $operator, string $second): self
+    /**
+     * Adds a JOIN clause to the query
+     *
+     * @param string $table Table to join
+     * @param string $first First column for join condition
+     * @param string $operator Comparison operator
+     * @param string $second Second column for join condition
+     * @return self For method chaining
+     */
+    public function join($table, $first, $operator, $second)
     {
         $this->queryBase .= " JOIN $table ON $first $operator $second";
         return $this;
@@ -193,7 +255,13 @@ class BaseModel
      * });
      * // Produces: WHERE (column1 = 'value1' OR column2 = 'value2')
      */
-    public function whereOr(callable $callback): self
+    /**
+     * Adds a group of OR conditions to the query
+     *
+     * @param callable $callback Function that builds the OR conditions
+     * @return self For method chaining
+     */
+    public function whereOr($callback)
     {
         $orBuilder = new OrConditionBuilder();
         $callback($orBuilder);                 // user builds OR group

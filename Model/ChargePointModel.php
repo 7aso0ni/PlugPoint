@@ -13,7 +13,13 @@ class ChargePointModel extends BaseModel
     const TABLE_NAME = "ChargePoints";
 
     /** Count bookings in a given status */
-    public function getBookingCountByStatus(string $status): int
+    /**
+     * Count bookings in a given status
+     * 
+     * @param string $status The booking status
+     * @return int Count of bookings
+     */
+    public function getBookingCountByStatus($status)
     {
         $row = $this->query(
             "SELECT COUNT(*) AS total FROM bookings WHERE status = :status",
@@ -24,7 +30,13 @@ class ChargePointModel extends BaseModel
     }
 
     /** Latest N bookings with user & charge-point info */
-    public function getRecentBookingsWithDetails(int $limit = 5): array
+    /**
+     * Latest N bookings with user & charge-point info
+     * 
+     * @param int $limit Maximum number of bookings to return
+     * @return array Recent bookings with details
+     */
+    public function getRecentBookingsWithDetails($limit = 5)
     {
         $limit = max(1, $limit);
 
@@ -43,7 +55,13 @@ class ChargePointModel extends BaseModel
     }
 
     /** Monthly stats for the past N months (oldest → newest) */
-    public function getMonthlyStats(int $months = 6): array
+    /**
+     * Monthly stats for the past N months (oldest → newest)
+     * 
+     * @param int $months Number of months to include
+     * @return array Monthly statistics
+     */
+    public function getMonthlyStats($months = 6)
     {
         $months = max(1, $months);
         $data = [];
@@ -85,7 +103,12 @@ class ChargePointModel extends BaseModel
      * 
      * @return array All charge points
      */
-    public function getAllChargePoints(): array
+    /**
+     * Get all charge points
+     * 
+     * @return array All charge points
+     */
+    public function getAllChargePoints()
     {
         return $this->table(self::TABLE_NAME)
             ->select()
@@ -113,7 +136,14 @@ class ChargePointModel extends BaseModel
      * @param int $offset Pagination offset
      * @return array Charge points with owner details
      */
-    public function getAllChargePointsWithOwners($limit = 8, $offset = 0): array
+    /**
+     * Get charge points with owner information and pagination
+     * 
+     * @param int $limit Maximum number of results
+     * @param int $offset Pagination offset
+     * @return array Charge points with owner details
+     */
+    public function getAllChargePointsWithOwners($limit = 8, $offset = 0)
     {
         return $this->table(self::TABLE_NAME . ' AS cp')
             ->select('cp.*, u.name as owner_name')
@@ -127,7 +157,12 @@ class ChargePointModel extends BaseModel
      * 
      * @return int Number of available charge points
      */
-    public function getAvailableChargePointsCount(): int
+    /**
+     * Get count of available charge points
+     * 
+     * @return int Number of available charge points
+     */
+    public function getAvailableChargePointsCount()
     {
         $result = $this->table(self::TABLE_NAME)
             ->select('COUNT(*) as count')
@@ -142,7 +177,12 @@ class ChargePointModel extends BaseModel
      * 
      * @return int Total number of charge points
      */
-    public function getTotalChargePoints(): int
+    /**
+     * Get total number of charge points
+     * 
+     * @return int Total number of charge points
+     */
+    public function getTotalChargePoints()
     {
         $result = $this->table(self::TABLE_NAME)
             ->select('COUNT(*) as count')
@@ -161,7 +201,17 @@ class ChargePointModel extends BaseModel
      * @param int $offset Pagination offset
      * @return array Filtered charge points
      */
-    public function getFilteredChargePoints($search = '', $maxPrice = 0.50, $available = null, $limit = 8, $offset = 0): array
+    /**
+     * Get filtered charge points for listings page
+     * 
+     * @param string $search Search term
+     * @param float $maxPrice Maximum price filter
+     * @param int|null $available Availability filter
+     * @param int $limit Maximum results per page
+     * @param int $offset Pagination offset
+     * @return array Filtered charge points
+     */
+    public function getFilteredChargePoints($search = '', $maxPrice = 0.50, $available = null, $limit = 8, $offset = 0)
     {
         $query = $this->table(self::TABLE_NAME . ' AS cp')
             ->select('cp.*, u.name as owner_name')
@@ -192,7 +242,15 @@ class ChargePointModel extends BaseModel
      * @param int|null $available Availability filter
      * @return int Count of filtered charge points
      */
-    public function getFilteredChargePointsCount($search = '', $maxPrice = 0.50, $available = null): int
+    /**
+     * Get count of filtered charge points
+     * 
+     * @param string $search Search term
+     * @param float $maxPrice Maximum price filter
+     * @param int|null $available Availability filter
+     * @return int Count of filtered charge points
+     */
+    public function getFilteredChargePointsCount($search = '', $maxPrice = 0.50, $available = null)
     {
         $query = $this->table(self::TABLE_NAME)
             ->select('COUNT(*) as count');

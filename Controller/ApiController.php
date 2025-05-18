@@ -2,11 +2,11 @@
 
 namespace Controller;
 
-use BaseController;
+
 use Model\UserModel;
 use Model\ChargePointModel;
 
-require_once 'BaseController.php';
+require_once 'Controller/BaseController.php';
 require_once 'Model/UserModel.php';
 require_once 'Model/ChargePointModel.php';
 

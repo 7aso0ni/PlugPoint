@@ -2,12 +2,12 @@
 
 namespace Controller;
 
-use BaseController;
+
 use Model\BookingModel;
 use Model\ChargePointModel;
 use Model\UserModel;
 
-require_once 'BaseController.php';
+require_once 'Controller/BaseController.php';
 
 
 class BookingController extends BaseController

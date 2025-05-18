@@ -11,6 +11,12 @@ use Model\ChargePointModel;
 use Model\UserModel;
 use Model\BookingModel;
 
+/**
+ * Upload image helper method
+ * 
+ * @param array $file The uploaded file data
+ * @return string|false The path to the uploaded file or false on failure
+ */
 class ChargePointController extends \Controller\BaseController
 {
 
@@ -258,63 +264,18 @@ class ChargePointController extends \Controller\BaseController
             // Handle optional image upload
             $image_path = 'images/chargepoint-default.jpg'; // Default image path
             if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK && !empty($_FILES['image']['name'])) {
-                $target_dir = "uploads/";
+                $uploadedFile = $_FILES['image'];
+                $image_path = $this->uploadImage($uploadedFile);
                 
-                // Create directory if it doesn't exist with proper permissions
-                if (!is_dir($target_dir)) {
-                    if (!mkdir($target_dir, 0777, true)) {
-                        error_log("Failed to create directory: " . $target_dir);
-                        $_SESSION['errors'] = ["Failed to create upload directory"];
-                        header('Location: index.php?route=homeowner/add_charger');
-                        exit();
-                    }
-                    chmod($target_dir, 0777); // Ensure directory is writable
-                }
-
-                // Get file extension
-                $file_name = basename($_FILES['image']['name']);
-                $file_ext = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
-                
-                // Validate file type
-                $allowed_exts = ['jpg', 'jpeg', 'png', 'gif'];
-                if (!in_array($file_ext, $allowed_exts)) {
-                    error_log("Invalid file type: " . $file_ext);
-                    $_SESSION['errors'] = ["Only JPG, PNG and GIF images are allowed"];
-                    header('Location: index.php?route=homeowner/add_charger');
-                    exit();
-                }
-
-                // Validate file size (max 5MB)
-                if ($_FILES['image']['size'] > 5 * 1024 * 1024) {
-                    error_log("File too large: " . $_FILES['image']['size']);
-                    $_SESSION['errors'] = ["Image size should not exceed 5MB"];
-                    header('Location: index.php?route=homeowner/add_charger');
-                    exit();
-                }
-                
-                // Validate file is an actual image
-                $image_info = @getimagesize($_FILES['image']['tmp_name']);
-                if (!$image_info) {
-                    error_log("Not a valid image file");
-                    $_SESSION['errors'] = ["Not a valid image file"];
-                    header('Location: index.php?route=homeowner/add_charger');
-                    exit();
-                }
-
-                // Generate unique filename
-                $unique_name = time() . '_' . uniqid() . '.' . $file_ext;
-                $target_file = $target_dir . $unique_name;
-
-                if (move_uploaded_file($_FILES["image"]["tmp_name"], $target_file)) {
-                    $image_path = $target_file;
-                    chmod($target_file, 0644); // Make file readable
-                    error_log("Image uploaded successfully to: " . $target_file);
-                } else {
-                    error_log("Failed to move uploaded file from {$_FILES['image']['tmp_name']} to {$target_file}");
+                if (!$image_path) {
                     $_SESSION['errors'] = ["Failed to upload image"];
                     header('Location: index.php?route=homeowner/add_charger');
                     exit();
                 }
+                
+                error_log("Save charger: Image path being saved to database: " . $image_path);
+            } else {
+                error_log("Save charger: Using default image path: " . $image_path);
             }
             
             // Debug log the image path
@@ -414,63 +375,19 @@ class ChargePointController extends \Controller\BaseController
             // Handle image upload if a new file is provided
             $image_url = $charger['image_url'] ?: 'images/chargepoint-default.jpg'; // Use existing or default
             if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK && !empty($_FILES['image']['name'])) {
-                $target_dir = "uploads/";
+                $uploadedFile = $_FILES['image'];
+                $newImageUrl = $this->uploadImage($uploadedFile);
                 
-                // Create directory if it doesn't exist with proper permissions
-                if (!is_dir($target_dir)) {
-                    if (!mkdir($target_dir, 0777, true)) {
-                        error_log("Failed to create directory: " . $target_dir);
-                        $_SESSION['errors'] = ["Failed to create upload directory"];
-                        header('Location: index.php?route=homeowner/edit_charger?id=' . $id);
-                        exit();
-                    }
-                    chmod($target_dir, 0777); // Ensure directory is writable
-                }
-
-                // Get file extension
-                $file_name = basename($_FILES['image']['name']);
-                $file_ext = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
-                
-                // Validate file type
-                $allowed_exts = ['jpg', 'jpeg', 'png', 'gif'];
-                if (!in_array($file_ext, $allowed_exts)) {
-                    error_log("Invalid file type: " . $file_ext);
-                    $_SESSION['errors'] = ["Only JPG, PNG and GIF images are allowed"];
-                    header('Location: index.php?route=homeowner/edit_charger?id=' . $id);
-                    exit();
-                }
-
-                // Validate file size (max 5MB)
-                if ($_FILES['image']['size'] > 5 * 1024 * 1024) {
-                    error_log("File too large: " . $_FILES['image']['size']);
-                    $_SESSION['errors'] = ["Image size should not exceed 5MB"];
-                    header('Location: index.php?route=homeowner/edit_charger?id=' . $id);
-                    exit();
-                }
-                
-                // Validate file is an actual image
-                $image_info = @getimagesize($_FILES['image']['tmp_name']);
-                if (!$image_info) {
-                    error_log("Not a valid image file");
-                    $_SESSION['errors'] = ["Not a valid image file"];
-                    header('Location: index.php?route=homeowner/edit_charger?id=' . $id);
-                    exit();
-                }
-
-                // Generate unique filename
-                $unique_name = time() . '_' . uniqid() . '.' . $file_ext;
-                $target_file = $target_dir . $unique_name;
-
-                if (move_uploaded_file($_FILES["image"]["tmp_name"], $target_file)) {
-                    $image_url = $target_file;
-                    chmod($target_file, 0644); // Make file readable
-                    error_log("Image uploaded successfully to: " . $target_file);
+                if ($newImageUrl) {
+                    $image_url = $newImageUrl;
+                    error_log("Edit charger: Image path being saved to database: " . $image_url);
                 } else {
-                    error_log("Failed to move uploaded file from {$_FILES['image']['tmp_name']} to {$target_file}");
                     $_SESSION['errors'] = ["Failed to upload image"];
                     header('Location: index.php?route=homeowner/edit_charger?id=' . $id);
                     exit();
                 }
+            } else {
+                error_log("Edit charger: Using existing image path: " . $image_url);
             }
             
             // Debug log the image path
@@ -505,5 +422,70 @@ class ChargePointController extends \Controller\BaseController
         header('Location: index.php?route=homeowner/my_chargers');
         exit;
     }
+    
+    /**
+     * Upload image helper method
+     * 
+     * @param array $file The uploaded file data
+     * @return string|false The path to the uploaded file or false on failure
+     */
+    private function uploadImage($file)
+    {
+        // Basic validation
+        if (!isset($file['tmp_name']) || !isset($file['name']) || $file['error'] !== UPLOAD_ERR_OK) {
+            error_log("Upload validation failed: " . json_encode($file));
+            return false;
+        }
 
+        // Get file info
+        $fileName = basename($file['name']);
+        $targetDir = "uploads/";
+
+        // Create directory if it doesn't exist with proper permissions
+        if (!is_dir($targetDir)) {
+            if (!mkdir($targetDir, 0777, true)) {
+                error_log("Failed to create directory: " . $targetDir);
+                return false;
+            }
+            chmod($targetDir, 0777); // Ensure directory is writable
+        }
+
+        // Generate unique filename
+        $fileExt = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+        $uniqueName = time() . '_' . uniqid() . '.' . $fileExt;
+        $targetFilePath = $targetDir . $uniqueName;
+
+        // Validate file type
+        $allowedTypes = ['jpg', 'jpeg', 'png', 'gif'];
+        if (!in_array($fileExt, $allowedTypes)) {
+            error_log("Invalid file type: " . $fileExt);
+            return false;
+        }
+
+        // Validate file size
+        $maxSize = 5 * 1024 * 1024; // 5MB
+        if ($file['size'] > $maxSize) {
+            error_log("File too large: " . $file['size']);
+            return false;
+        }
+
+        // Validate file is an actual image
+        $imageInfo = @getimagesize($file['tmp_name']);
+        if (!$imageInfo) {
+            error_log("Not a valid image file");
+            return false;
+        }
+
+        // Move uploaded file
+        if (!move_uploaded_file($file['tmp_name'], $targetFilePath)) {
+            error_log("Failed to move uploaded file from {$file['tmp_name']} to {$targetFilePath}");
+            return false;
+        }
+
+        // Make file readable
+        chmod($targetFilePath, 0644);
+        
+        error_log("Image uploaded successfully to: " . $targetFilePath);
+        return $targetFilePath;
+    }
 }

@@ -9,7 +9,7 @@
 
 
 //define('DB_HOST', '20.126.5.244');
-// define('DB_HOST', 'localhost');
+define('DB_HOST', 'localhost');
 define('DB_NAME', 'db202201044');
 define('DB_USER', 'u202201044');
 define('DB_PASSWORD', 'u202201044');

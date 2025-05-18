@@ -16,7 +16,7 @@ try {
     if (is_writable($logFile) || (!file_exists($logFile) && is_writable(dirname($logFile)))) {
         file_put_contents($logFile, "Started index.php\n", FILE_APPEND);
     }
-    
+
     register_shutdown_function(function () {
         $error = error_get_last();
         if ($error && $error['type'] === E_ERROR) {

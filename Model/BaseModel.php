@@ -230,7 +230,7 @@ class BaseModel
      * @param mixed $value Value to compare against
      * @return self For method chaining
      */
-    public function where(string $column, string $operator, $value): self
+    public function where($column, $operator, $value)
     {
         $param = preg_replace('/[^a-zA-Z0-9_]/', '_', $column);
         $condition = "$column $operator :$param";
@@ -292,7 +292,7 @@ class BaseModel
      * $model->whereIn('id', [1, 2, 3]);
      * // Produces: WHERE id IN (1, 2, 3)
      */
-    public function whereIn(string $column, array $values): self
+    public function whereIn($column, $values)
     {
         if (!$values) {
             throw new \InvalidArgumentException('whereIn() needs at least one value');
@@ -322,7 +322,7 @@ class BaseModel
      * @param string $column Column to group by
      * @return self For method chaining
      */
-    public function groupBy(string $column): self
+    public function groupBy($column)
     {
         $this->groupByClause
             ? $this->groupByClause .= ", $column"
@@ -336,7 +336,7 @@ class BaseModel
      * @param string $condition HAVING condition
      * @return self For method chaining
      */
-    public function having(string $condition): self
+    public function having($condition)
     {
         $this->havingClause = " HAVING $condition";
         return $this;
@@ -349,7 +349,7 @@ class BaseModel
      * @param string $direction Sort direction (ASC or DESC)
      * @return self For method chaining
      */
-    public function orderBy(string $column, string $direction = 'ASC'): self
+    public function orderBy($column, $direction = 'ASC')
     {
         $direction = strtoupper($direction) === 'DESC' ? 'DESC' : 'ASC';
         $this->orderByClause
@@ -365,7 +365,7 @@ class BaseModel
      * @param int $offset Number of rows to skip
      * @return self For method chaining
      */
-    public function limit(int $limit, int $offset = 0): self
+    public function limit($limit, $offset = 0)
     {
         $this->limit = $limit;
         $this->offset = $offset;
@@ -379,7 +379,7 @@ class BaseModel
      * @param int $mode PDO fetch mode
      * @return array Array of matching rows
      */
-    public function get(int $mode = PDO::FETCH_ASSOC): array
+    public function get($mode = PDO::FETCH_ASSOC)
     {
         return $this->execute()->fetchAll($mode);
     }
@@ -400,7 +400,7 @@ class BaseModel
      *
      * @return bool True if at least one row matches
      */
-    public function exists(): bool
+    public function exists()
     {
         return $this->execute()->rowCount() > 0;
     }
@@ -411,7 +411,7 @@ class BaseModel
      * @param array $data Associative array of column => value pairs
      * @return PDOStatement The executed statement
      */
-    public function insert(array $data): PDOStatement
+    public function insert($data)
     {
         $cols = implode(', ', array_keys($data));
         $placeholders = ':' . implode(', :', array_keys($data));
@@ -427,7 +427,7 @@ class BaseModel
      * @return PDOStatement The executed statement
      * @throws \InvalidArgumentException If data array is empty
      */
-    public function update(array $data): PDOStatement
+    public function update($data)
     {
         if (!$data) {
             throw new \InvalidArgumentException('Update data cannot be empty');
@@ -448,7 +448,7 @@ class BaseModel
      * @return PDOStatement The executed statement
      * @throws \RuntimeException If no WHERE clause is specified (safety feature)
      */
-    public function delete(): PDOStatement
+    public function delete()
     {
         if ($this->whereClause === '') {
             throw new \RuntimeException('Refusing to DELETE without a WHERE clause');
@@ -464,7 +464,7 @@ class BaseModel
      * @param array $params Parameters for the query
      * @return PDOStatement The executed statement
      */
-    public function query(string $sql, array $params = []): PDOStatement
+    public function query($sql, $params = [])
     {
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
@@ -479,7 +479,7 @@ class BaseModel
      * @param string $alias Alias for the sum column in the result
      * @return float Sum of the column values
      */
-    public function sum(string $column, string $alias = 'sum'): float
+    public function sum($column, $alias = 'sum')
     {
         $result = $this->select("SUM($column) AS $alias")->first();
         return (float) ($result[$alias] ?? 0);
@@ -504,7 +504,7 @@ class BaseModel
      *
      * @return string The complete SQL query
      */
-    private function assemble(): string
+    private function assemble()
     {
         $sql = $this->queryBase .
             $this->whereClause .
@@ -526,7 +526,7 @@ class BaseModel
      *
      * @return PDOStatement The executed statement
      */
-    private function execute(): PDOStatement
+    private function execute()
     {
         $stmt = $this->db->prepare($this->assemble());
         $stmt->execute(array_merge($this->params, $this->whereParams));
@@ -539,7 +539,7 @@ class BaseModel
      *
      * @return void
      */
-    private function reset(): void
+    private function reset()
     {
         $this->queryBase = '';
         $this->whereClause = '';
@@ -565,17 +565,20 @@ class OrConditionBuilder
     /**
      * @var array List of SQL condition strings
      */
-    private array $conditions = [];
+    /**
+     * @var array List of SQL condition strings
+     */
+    private $conditions = [];
     
     /**
      * @var array Parameters for the conditions
      */
-    private array $parameters = [];
+    private $parameters = [];
     
     /**
      * @var int Counter for generating unique parameter names
      */
-    private int $counter = 0;
+    private $counter = 0;
 
     /**
      * Adds a condition to the OR group
@@ -585,7 +588,7 @@ class OrConditionBuilder
      * @param mixed $value Value to compare against
      * @return self For method chaining
      */
-    public function where(string $column, string $operator, $value): self
+    public function where($column, $operator, $value)
     {
         $paramName = 'or_' . preg_replace('/[^a-zA-Z0-9_]/', '_', $column) . '_' . $this->counter++;
         $this->conditions[] = "$column $operator :$paramName";
@@ -598,7 +601,12 @@ class OrConditionBuilder
      *
      * @return array List of conditions
      */
-    public function getConditions(): array
+    /**
+     * Gets the list of SQL condition strings
+     *
+     * @return array List of conditions
+     */
+    public function getConditions()
     {
         return $this->conditions;
     }
@@ -608,7 +616,12 @@ class OrConditionBuilder
      *
      * @return array Parameters
      */
-    public function getParameters(): array
+    /**
+     * Gets the parameters for the conditions
+     *
+     * @return array Parameters
+     */
+    public function getParameters()
     {
         return $this->parameters;
     }

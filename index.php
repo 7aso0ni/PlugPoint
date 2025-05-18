@@ -10,13 +10,25 @@ ini_set('display_errors', 1); // temporarily enable for browser
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-file_put_contents(__DIR__ . '/php_error_log.txt', "Started index.php\n", FILE_APPEND);
-register_shutdown_function(function () {
-    $error = error_get_last();
-    if ($error && $error['type'] === E_ERROR) {
-        file_put_contents(__DIR__ . '/php_error_log.txt', "Fatal Error: " . print_r($error, true), FILE_APPEND);
+// Try to log to file, but don't fail if permissions don't allow it
+try {
+    $logFile = __DIR__ . '/php_error_log.txt';
+    if (is_writable($logFile) || (!file_exists($logFile) && is_writable(dirname($logFile)))) {
+        file_put_contents($logFile, "Started index.php\n", FILE_APPEND);
     }
-});
+    
+    register_shutdown_function(function () {
+        $error = error_get_last();
+        if ($error && $error['type'] === E_ERROR) {
+            $logFile = __DIR__ . '/php_error_log.txt';
+            if (is_writable($logFile) || (!file_exists($logFile) && is_writable(dirname($logFile)))) {
+                file_put_contents($logFile, "Fatal Error: " . print_r($error, true), FILE_APPEND);
+            }
+        }
+    });
+} catch (Exception $e) {
+    // Silently continue if logging fails
+}
 
 //define('DB_HOST', '20.126.5.244');
 define('DB_HOST', 'localhost');

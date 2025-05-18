@@ -4,6 +4,8 @@ namespace Controller;
 
 use \Model\UserModel;
 
+require_once 'Controller/BaseController.php';
+
 class AccountController extends BaseController
 {
     private $userModel = null;

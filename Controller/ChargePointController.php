@@ -5,21 +5,21 @@ namespace Controller;
 require_once 'Model/ChargePointModel.php';
 require_once 'Model/UserModel.php';
 require_once 'Model/BookingModel.php';
+require_once __DIR__ . '/BaseController.php';
 
-require_once 'BaseController.php';
-
-use BaseController;
 use Model\ChargePointModel;
 use Model\UserModel;
 use Model\BookingModel;
 
-class ChargePointController extends BaseController {
+class ChargePointController extends \Controller\BaseController
+{
 
     private $chargePointModel;
     private $userModel;
     private $bookingModel;
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->chargePointModel = new ChargePointModel();
         $this->userModel = new UserModel();
         $this->bookingModel = new BookingModel();
@@ -33,7 +33,7 @@ class ChargePointController extends BaseController {
     /* LIST PAGE                                                  */
     /* ─────────────────────────────────────────────────────────── */
 
-//    public function index()
+    //    public function index()
 //    {
 //        $title = 'EV Charging Stations';
 //
@@ -75,18 +75,19 @@ class ChargePointController extends BaseController {
 //        /* layout */
 //        require 'View/layouts/main.php';
 //    }
-    public function index() {
+    public function index()
+    {
 
-        
+
         $title = 'EV Charging Stations';
 
         // Fetch all charge points without filtering by price, availability, or pagination
         $chargePoints = $this->chargePointModel->getFilteredChargePoints(
-                '', // No search term
-                999999.0, // Very high max price to include all
-                null, // Include both available and unavailable
-                1000, // High limit to show all at once
-                0           // Start from first
+            '', // No search term
+            999999.0, // Very high max price to include all
+            null, // Include both available and unavailable
+            1000, // High limit to show all at once
+            0           // Start from first
         );
 
         $totalCount = count($chargePoints);
@@ -113,7 +114,8 @@ class ChargePointController extends BaseController {
     /* AJAX FILTER END-POINT                                      */
     /* ─────────────────────────────────────────────────────────── */
 
-    public function filter() {
+    public function filter()
+    {
         // Get parameters from both POST and GET
         $search = $_POST['search'] ?? '';
         $maxPrice = (float) ($_POST['max_price'] ?? 0.50);
@@ -168,7 +170,8 @@ class ChargePointController extends BaseController {
     /* DETAILS PAGE                                               */
     /* ─────────────────────────────────────────────────────────── */
 
-    public function details() {
+    public function details()
+    {
         $id = (int) ($_GET['id'] ?? 0);
         $title = 'Charging Station Details';
         $cp = $this->chargePointModel->getChargePointWithOwner($id);
@@ -192,7 +195,8 @@ class ChargePointController extends BaseController {
         require 'View/layouts/main.php';
     }
 
-    public function addCharger() {
+    public function addCharger()
+    {
         $title = 'Add New Charger';
 
         ob_start();
@@ -202,7 +206,8 @@ class ChargePointController extends BaseController {
         require 'View/layouts/main.php'; // wraps it in the layout (with navbar)
     }
 
-    public function saveCharger() {
+    public function saveCharger()
+    {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Get form data
             $location = trim($_POST['location'] ?? '');
@@ -212,28 +217,28 @@ class ChargePointController extends BaseController {
             $latitude = floatval($_POST['latitude'] ?? 0);
             $longitude = floatval($_POST['longitude'] ?? 0);
             $user_id = $_SESSION['user']['id'] ?? null;
-            
+
             // Validation
             $errors = [];
-            
+
             if (empty($location)) {
                 $errors[] = "Location is required";
             }
-            
+
             if ($price <= 0) {
                 $errors[] = "Price must be greater than zero";
             }
-            
+
             if ($latitude == 0 || $longitude == 0) {
                 $errors[] = "Please select a valid location on the map";
             }
-            
+
             if (!$user_id) {
                 $errors[] = "You must be logged in to add a charger";
                 header('Location: index.php?route=login');
                 exit();
             }
-            
+
             // Check if user has permission to add chargers (must be a charger owner)
             if (!isset($_SESSION['user']['role_id']) || $_SESSION['user']['role_id'] != 2) {
                 $errors[] = "You don't have permission to add chargers";
@@ -242,7 +247,7 @@ class ChargePointController extends BaseController {
                 header('Location: index.php?route=homeowner/add_charger');
                 exit();
             }
-            
+
             // If there are validation errors, redirect back with error messages
             if (!empty($errors)) {
                 $_SESSION['errors'] = $errors;
@@ -257,17 +262,17 @@ class ChargePointController extends BaseController {
                 if (!is_dir($target_dir)) {
                     mkdir($target_dir, 0755, true);
                 }
-                
+
                 // Validate file type
                 $allowed_types = ['image/jpeg', 'image/png', 'image/gif'];
                 $file_type = $_FILES['image']['type'];
-                
+
                 if (!in_array($file_type, $allowed_types)) {
                     $_SESSION['errors'] = ["Only JPG, PNG and GIF images are allowed"];
                     header('Location: index.php?route=homeowner/add_charger');
                     exit();
                 }
-                
+
                 // Validate file size (max 5MB)
                 if ($_FILES['image']['size'] > 5 * 1024 * 1024) {
                     $_SESSION['errors'] = ["Image size should not exceed 5MB"];
@@ -309,7 +314,7 @@ class ChargePointController extends BaseController {
                     $availability,
                     $image_path
                 ]);
-                
+
                 $_SESSION['success'] = "Charger added successfully!";
                 header('Location: index.php?route=homeowner/my_chargers');
                 exit();
@@ -325,7 +330,8 @@ class ChargePointController extends BaseController {
         }
     }
 
-    public function myChargers() {
+    public function myChargers()
+    {
         if (!isset($_SESSION['user'])) {
             header('Location: index.php?route=login');
             exit();
@@ -334,7 +340,7 @@ class ChargePointController extends BaseController {
         $userId = $_SESSION['user']['id'];
         $title = 'My Chargers';
         $myChargers = $this->chargePointModel->getChargePointsByOwner($userId);
-        
+
         // Fetch pending bookings for each charger
         $chargerBookings = [];
         foreach ($myChargers as $charger) {
@@ -349,7 +355,8 @@ class ChargePointController extends BaseController {
         require 'View/layouts/main.php';
     }
 
-    public function editCharger() {
+    public function editCharger()
+    {
         if (empty($_SESSION['user'])) {
             header('Location: index.php?route=login');
             exit;
@@ -405,7 +412,8 @@ class ChargePointController extends BaseController {
         require 'View/layouts/main.php';
     }
 
-    public function deleteCharger() {
+    public function deleteCharger()
+    {
         if (empty($_SESSION['user'])) {
             header('Location: index.php?route=login');
             exit;

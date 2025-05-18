@@ -33,7 +33,6 @@
         <div class="mb-4">
             <label class="block font-medium">Change Image (optional)</label>
             <input type="file" name="image" class="w-full border px-4 py-2 rounded">
-            <p class="text-sm mt-2">Current: <?= htmlspecialchars($charger['image_url']) ?></p>
         </div>
 
         <div class="flex justify-end">

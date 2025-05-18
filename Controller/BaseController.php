@@ -1,4 +1,6 @@
 <?php
+namespace Controller;
+
 /**
  * This controller is responsible for passing main utility functions to it's children making use of their funcitonality and making the code less verbose
  */

@@ -2,12 +2,11 @@
 
 namespace Controller;
 
-require_once 'Controller/BaseController.php';
 use Model\UserModel;
 use Model\ChargePointModel;
 use Model\BookingModel;
 
-class AdminController extends \BaseController
+class AdminController extends BaseController
 {
     private $userModel;
     private $chargePointModel;
@@ -555,7 +554,7 @@ class AdminController extends \BaseController
         // Get file info
         $fileName = basename($file['name']);
         $targetDir = "uploads/";
-        
+
         // Create directory if it doesn't exist
         if (!is_dir($targetDir)) {
             if (!mkdir($targetDir, 0777, true)) {

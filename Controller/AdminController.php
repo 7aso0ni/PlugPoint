@@ -33,6 +33,7 @@ class AdminController extends BaseController
         $this->checkAdminAccess();
 
         $title = "Admin Dashboard";
+        $route = 'admin/dashboard'; // Add the current route for the active menu item
 
         // Get dashboard stats
         $stats = [
@@ -57,7 +58,10 @@ class AdminController extends BaseController
      */
     public function users()
     {
+        $this->checkAdminAccess();
+
         $title = "User Management";
+        $route = 'admin/users'; // Add the current route for the active menu item
 
         // Get pagination parameters
         $currentPage = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
@@ -90,7 +94,10 @@ class AdminController extends BaseController
      */
     public function chargePoints()
     {
+        $this->checkAdminAccess();
+
         $title = "Charge Point Management";
+        $route = 'admin/charge_points'; // Add the current route for the active menu item
 
         // Get pagination parameters
         $currentPage = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
@@ -126,7 +133,10 @@ class AdminController extends BaseController
      */
     public function bookings()
     {
+        $this->checkAdminAccess();
+
         $title = "Booking Management";
+        $route = 'admin/bookings'; // Add the current route for the active menu item
 
         // Get filter parameters
         $status = isset($_GET['status']) ? trim($_GET['status']) : '';
@@ -603,7 +613,10 @@ class AdminController extends BaseController
      */
     public function reports()
     {
+        $this->checkAdminAccess();
+
         $title = "Reports";
+        $route = 'admin/reports'; // Add the current route for the active menu item
 
         // Get monthly stats for the last 6 months
         $months = 6;
@@ -627,7 +640,7 @@ class AdminController extends BaseController
      */
     protected function checkAdminAccess()
     {
-        if (!isset($_SESSION['user']) || ($_SESSION['user']['role_id'] ?? 0) !== 1) {
+        if (!isset($_SESSION['user']) || (int) ($_SESSION['user']['role_id'] ?? 0) !== 1) {
             $this->setMessage('error', 'Unauthorized access. Admin privileges required.');
             $this->redirect('home');
         }

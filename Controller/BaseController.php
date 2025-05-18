@@ -19,7 +19,7 @@ class BaseController
      */
     protected function checkAdminAccess()
     {
-        if (!isset($_SESSION['user']) || $_SESSION['user']['role_id'] !== 1) {
+        if (!isset($_SESSION['user']) || (int) ($_SESSION['user']['role_id'] ?? 0) !== 1) {
             $this->setMessage('error', 'Access denied. You do not have admin privileges.');
             $this->redirect('login');
         }
